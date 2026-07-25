@@ -457,9 +457,170 @@
       position: relative;
     }
     .music-progress {
-      width: 35%;
+      width: 0%;
       height: 100%;
       border-radius: 2px;
+      transition: width 0.2s linear;
+    }
+
+    /* ========== 照片上传区 ========== */
+    .photo-upload-zone {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .photo-upload-zone:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .photo-upload-zone .upload-hint {
+      color: #555566;
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.8;
+    }
+    .photo-upload-zone .upload-hint span {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .photo-upload-zone img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+    .photo-remove-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: none;
+      color: #ff6677;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+    }
+    .photo-upload-zone.has-photo .photo-remove-btn { display: block; }
+    .photo-upload-zone.has-photo .upload-hint { display: none; }
+
+    /* ========== 音乐搜索区 ========== */
+    .music-search-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .music-search-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: #ccccee;
+      font-size: 12px;
+      padding: 8px 12px;
+      outline: none;
+      font-family: inherit;
+    }
+    .music-search-input:focus { border-color: rgba(255,255,255,0.2); }
+    .music-search-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #aaaabb;
+      font-size: 11px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .music-search-btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: #e8e8ec;
+    }
+    .music-search-results {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s;
+      margin-bottom: 4px;
+    }
+    .music-search-results.show {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .music-result-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .music-result-item:hover { background: rgba(255,255,255,0.06); }
+    .music-result-item .song-name {
+      font-size: 12px;
+      color: #ccccee;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .music-result-item .song-artist {
+      font-size: 11px;
+      color: #666677;
+      flex-shrink: 0;
+    }
+    .music-url-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .music-url-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: #ccccee;
+      font-size: 11px;
+      padding: 6px 10px;
+      outline: none;
+      font-family: monospace;
+    }
+    .music-section-label {
+      font-size: 10px;
+      color: #555566;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ========== 删除按钮 ========== */
+    .delete-btn {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,80,100,0.15);
+      background: rgba(255,80,100,0.05);
+      color: #ff6677;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-family: inherit;
+    }
+    .delete-btn:hover {
+      background: rgba(255,80,100,0.12);
+      border-color: rgba(255,80,100,0.3);
     }
 
     /* ========== 入场动画 ========== */
@@ -584,17 +745,36 @@
       </div>
     </div>
 
-    <div class="detail-photo" id="photoArea">[ 照片区 · 后续支持上传 ]</div>
+    <div class="music-section-label">照片</div>
+    <div class="photo-upload-zone" id="photoArea">
+      <div class="upload-hint"><span>📷</span>点击上传照片</div>
+      <button class="photo-remove-btn" id="photoRemoveBtn">&times;</button>
+    </div>
+    <input type="file" id="photoFile" accept="image/*" style="display:none">
+
     <textarea class="detail-text" id="detailText" placeholder="在这里写下这段时光的故事……"></textarea>
+
+    <div class="music-section-label">音乐</div>
+    <div class="music-search-row">
+      <input type="text" class="music-search-input" id="musicSearchInput" placeholder="搜索歌曲名或歌手…">
+      <button class="music-search-btn" id="musicSearchBtn">搜索</button>
+    </div>
+    <div class="music-search-results" id="musicSearchResults"></div>
+    <div class="music-url-row">
+      <input type="text" class="music-url-input" id="musicUrlInput" placeholder="或直接粘贴音乐链接 (URL)">
+    </div>
     <div class="detail-music">
-      <button class="music-play-btn" id="musicBtn"></button>
+      <button class="music-play-btn" id="musicBtn">▶</button>
       <div class="music-info">
-        <div class="music-title" id="musicTitle"></div>
+        <div class="music-title" id="musicTitle">未选择音乐</div>
         <div class="music-bar">
           <div class="music-progress" id="musicProgress"></div>
         </div>
       </div>
     </div>
+    <audio id="audioPlayer" preload="none"></audio>
+
+    <button class="delete-btn" id="deleteBeadBtn">🗑 删除这颗珠子</button>
   </div>
 
   <script>
@@ -1224,7 +1404,35 @@
         tagsDiv.appendChild(span);
       });
       document.getElementById('detailText').value = bead.text;
-      document.getElementById('musicTitle').textContent = bead.music;
+
+      // 照片显示
+      const photoArea = document.getElementById('photoArea');
+      const oldImg = photoArea.querySelector('img');
+      if (oldImg) oldImg.remove();
+      if (bead.photo) {
+        const img = document.createElement('img');
+        img.src = bead.photo;
+        photoArea.appendChild(img);
+        photoArea.classList.add('has-photo');
+      } else {
+        photoArea.classList.remove('has-photo');
+      }
+
+      // 音乐显示
+      const audio = document.getElementById('audioPlayer');
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = '';
+      document.getElementById('musicBtn').textContent = '▶';
+      document.getElementById('musicProgress').style.width = '0%';
+      if (bead.musicUrl) {
+        audio.src = bead.musicUrl;
+        document.getElementById('musicTitle').textContent = bead.music || '未知曲目';
+        document.getElementById('musicUrlInput').value = bead.musicUrl;
+      } else {
+        document.getElementById('musicTitle').textContent = bead.music || '未选择音乐';
+        document.getElementById('musicUrlInput').value = '';
+      }
       document.getElementById('musicBtn').style.background = tint.mid;
       document.getElementById('musicProgress').style.background = tint.mid;
     }
@@ -1354,7 +1562,150 @@
     });
 
     /* ==========================================================
-       十、初始化
+       十、照片上传
+       FileReader 读取图片 → canvas 压缩 → base64 存入珠子数据
+       压缩到最大 800px 宽，JPEG 质量 0.7，控制 localStorage 大小
+       ========================================================== */
+    const photoArea = document.getElementById('photoArea');
+    const photoFile = document.getElementById('photoFile');
+    const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+
+    photoArea.addEventListener('click', e => {
+      if (e.target === photoRemoveBtn) return;
+      photoFile.click();
+    });
+    photoRemoveBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (bead) { bead.photo = null; saveBeads(); updateDetailPreview(bead); }
+    });
+
+    photoFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { alert('图片太大（超过 10MB），请选小一点的。'); return; }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          // 压缩图片
+          const canvas = document.createElement('canvas');
+          const maxW = 800, maxH = 600;
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = h * (maxW / w); w = maxW; }
+          if (h > maxH) { w = w * (maxH / h); h = maxH; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          const bead = beads.find(b => b.id === currentBeadId);
+          if (bead) { bead.photo = compressed; saveBeads(); updateDetailPreview(bead); }
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+
+    /* ==========================================================
+       十一、音乐播放 + 联网搜索
+       搜索：通过 CORS 代理调用网易云搜索 API，展示结果
+       播放：HTML5 audio，播放/暂停切换，进度条实时更新
+       ========================================================== */
+    const audioPlayer = document.getElementById('audioPlayer');
+    const musicBtn = document.getElementById('musicBtn');
+    const musicSearchInput = document.getElementById('musicSearchInput');
+    const musicSearchBtn = document.getElementById('musicSearchBtn');
+    const musicSearchResults = document.getElementById('musicSearchResults');
+    const musicUrlInput = document.getElementById('musicUrlInput');
+
+    // 播放/暂停切换
+    musicBtn.addEventListener('click', () => {
+      if (!audioPlayer.src) { musicSearchInput.focus(); return; }
+      if (audioPlayer.paused) { audioPlayer.play(); musicBtn.textContent = '⏸'; }
+      else { audioPlayer.pause(); musicBtn.textContent = '▶'; }
+    });
+
+    // 进度条
+    audioPlayer.addEventListener('timeupdate', () => {
+      if (audioPlayer.duration) {
+        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        document.getElementById('musicProgress').style.width = pct + '%';
+      }
+    });
+    audioPlayer.addEventListener('ended', () => { musicBtn.textContent = '▶'; document.getElementById('musicProgress').style.width = '0%'; });
+
+    // URL 输入框 —— 直接粘贴链接播放
+    musicUrlInput.addEventListener('change', () => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (!bead) return;
+      const url = musicUrlInput.value.trim();
+      bead.musicUrl = url || null;
+      if (url && !bead.music) bead.music = '自定义音乐';
+      saveBeads();
+      updateDetailPreview(bead);
+    });
+
+    // 联网搜索音乐 —— 通过 CORS 代理调用网易云 API
+    musicSearchBtn.addEventListener('click', () => searchMusic());
+    musicSearchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); searchMusic(); }
+    });
+
+    async function searchMusic() {
+      const keyword = musicSearchInput.value.trim();
+      if (!keyword) return;
+      musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">搜索中…</div>';
+      musicSearchResults.classList.add('show');
+      try {
+        // 通过 CORS 代理调用网易云搜索 API
+        const apiUrl = 'https://music.163.com/api/search/get?s=' + encodeURIComponent(keyword) + '&type=1&limit=8';
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
+        const res = await fetch(proxyUrl);
+        const data = await res.json();
+        if (data.code === 200 && data.result && data.result.songs && data.result.songs.length > 0) {
+          musicSearchResults.innerHTML = '';
+          data.result.songs.forEach(song => {
+            const item = document.createElement('div');
+            item.className = 'music-result-item';
+            item.innerHTML = '<span class="song-name">' + song.name + '</span><span class="song-artist">' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '') + '</span>';
+            item.addEventListener('click', () => {
+              const bead = beads.find(b => b.id === currentBeadId);
+              if (!bead) return;
+              // 网易云外链播放 URL
+              bead.musicUrl = 'https://music.163.com/song/media/outer/url?id=' + song.id + '.mp3';
+              bead.music = song.name + ' — ' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '');
+              saveBeads();
+              updateDetailPreview(bead);
+              musicSearchResults.classList.remove('show');
+              musicSearchResults.innerHTML = '';
+            });
+            musicSearchResults.appendChild(item);
+          });
+        } else {
+          musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">没找到，试试手动粘贴链接</div>';
+        }
+      } catch (err) {
+        musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">搜索失败（网络限制），请手动粘贴音乐链接</div>';
+      }
+    }
+
+    /* ==========================================================
+       十二、删除珠子
+       ========================================================== */
+    document.getElementById('deleteBeadBtn').addEventListener('click', () => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (!bead) return;
+      if (!confirm('确定删除「' + bead.title + '」这颗珠子吗？\n删除后无法恢复，建议先导出备份。')) return;
+      const idx = beads.indexOf(bead);
+      beads.splice(idx, 1);
+      saveBeads();
+      closeDetail();
+      renderBeads();
+      renderIndex();
+    });
+
+    /* ==========================================================
+       十三、初始化
        ========================================================== */
     buildMaterialGrid();
     renderBeads();
