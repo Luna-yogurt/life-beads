@@ -1418,7 +1418,14 @@
         photoArea.classList.remove('has-photo');
       }
 
-      // 音乐显示
+      // 音乐标题显示（不碰 audio 元素，避免改标题/调色时打断播放）
+      document.getElementById('musicTitle').textContent = bead.musicUrl ? (bead.music || '未知曲目') : (bead.music || '未选择音乐');
+      document.getElementById('musicBtn').style.background = tint.mid;
+      document.getElementById('musicProgress').style.background = tint.mid;
+    }
+
+    // 加载珠子音频（只在打开详情/改音乐时调用，避免改标题时打断播放）
+    function loadBeadAudio(bead) {
       const audio = document.getElementById('audioPlayer');
       audio.pause();
       audio.currentTime = 0;
@@ -1427,14 +1434,10 @@
       document.getElementById('musicProgress').style.width = '0%';
       if (bead.musicUrl) {
         audio.src = bead.musicUrl;
-        document.getElementById('musicTitle').textContent = bead.music || '未知曲目';
         document.getElementById('musicUrlInput').value = bead.musicUrl;
       } else {
-        document.getElementById('musicTitle').textContent = bead.music || '未选择音乐';
         document.getElementById('musicUrlInput').value = '';
       }
-      document.getElementById('musicBtn').style.background = tint.mid;
-      document.getElementById('musicProgress').style.background = tint.mid;
     }
 
     function showDetail(id) {
@@ -1443,6 +1446,7 @@
       currentBeadId = id;
       syncDetailEditState(bead);
       updateDetailPreview(bead);
+      loadBeadAudio(bead);
       overlay.classList.add('active');
       panel.classList.add('active');
     }
@@ -1621,9 +1625,21 @@
     // 播放/暂停切换
     musicBtn.addEventListener('click', () => {
       if (!audioPlayer.src) { musicSearchInput.focus(); return; }
-      if (audioPlayer.paused) { audioPlayer.play(); musicBtn.textContent = '⏸'; }
-      else { audioPlayer.pause(); musicBtn.textContent = '▶'; }
+      if (audioPlayer.paused) {
+        audioPlayer.play().catch(() => {
+          musicBtn.textContent = '▶';
+          const t = document.getElementById('musicTitle');
+          const orig = t.textContent;
+          t.textContent = '⚠ 播放失败（链接无效或版权限制）';
+          setTimeout(() => { if (t.textContent.indexOf('播放失败') > -1) t.textContent = orig; }, 2500);
+        });
+      } else {
+        audioPlayer.pause();
+      }
     });
+    // 按钮状态由 audio 事件驱动，保证一致
+    audioPlayer.addEventListener('play', () => { musicBtn.textContent = '⏸'; });
+    audioPlayer.addEventListener('pause', () => { musicBtn.textContent = '▶'; });
 
     // 进度条
     audioPlayer.addEventListener('timeupdate', () => {
@@ -1634,15 +1650,20 @@
     });
     audioPlayer.addEventListener('ended', () => { musicBtn.textContent = '▶'; document.getElementById('musicProgress').style.width = '0%'; });
 
-    // URL 输入框 —— 直接粘贴链接播放
-    musicUrlInput.addEventListener('change', () => {
+    // URL 输入框 —— 粘贴/输入后自动加载（防抖 300ms，无需手动按回车）
+    let urlInputTimer = null;
+    musicUrlInput.addEventListener('input', () => {
       const bead = beads.find(b => b.id === currentBeadId);
       if (!bead) return;
-      const url = musicUrlInput.value.trim();
-      bead.musicUrl = url || null;
-      if (url && !bead.music) bead.music = '自定义音乐';
-      saveBeads();
-      updateDetailPreview(bead);
+      clearTimeout(urlInputTimer);
+      urlInputTimer = setTimeout(() => {
+        const url = musicUrlInput.value.trim();
+        bead.musicUrl = url || null;
+        if (url && !bead.music) bead.music = '自定义音乐';
+        saveBeads();
+        loadBeadAudio(bead);
+        updateDetailPreview(bead);
+      }, 300);
     });
 
     // 联网搜索音乐 —— 通过 CORS 代理调用网易云 API
@@ -1675,6 +1696,7 @@
               bead.musicUrl = 'https://music.163.com/song/media/outer/url?id=' + song.id + '.mp3';
               bead.music = song.name + ' — ' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '');
               saveBeads();
+              loadBeadAudio(bead);
               updateDetailPreview(bead);
               musicSearchResults.classList.remove('show');
               musicSearchResults.innerHTML = '';
