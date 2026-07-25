@@ -603,6 +603,145 @@
       margin-bottom: 4px;
       letter-spacing: 1px;
     }
+    .music-upload-row { margin-bottom: 8px; }
+    .music-upload-btn {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(120,100,200,0.12);
+      border: 1px solid rgba(150,130,220,0.25);
+      border-radius: 8px;
+      color: #ccccee;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .music-upload-btn:hover {
+      background: rgba(120,100,200,0.22);
+      border-color: rgba(150,130,220,0.4);
+    }
+    .music-upload-btn:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    .music-upload-status {
+      font-size: 11px;
+      color: #8888aa;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+    .music-upload-status.error { color: #cc6677; }
+    .music-upload-status.success { color: #66cc88; }
+
+    /* ========== 设置弹窗 ========== */
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,8,16,0.6);
+      backdrop-filter: blur(8px);
+      z-index: 400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .settings-overlay.show { display: flex; }
+    .settings-modal {
+      background: linear-gradient(160deg, #1a1a2a, #14141f);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 28px;
+      width: 90%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .settings-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #555566;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .settings-close:hover { color: #ccccee; }
+    .settings-title {
+      font-size: 18px;
+      font-weight: 300;
+      color: #e8e8ec;
+      margin-bottom: 4px;
+    }
+    .settings-sub {
+      font-size: 12px;
+      color: #666677;
+      margin-bottom: 20px;
+    }
+    .settings-section { margin-bottom: 16px; }
+    .settings-label {
+      display: block;
+      font-size: 12px;
+      color: #aaaabb;
+      margin-bottom: 6px;
+    }
+    .settings-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #e8e8ec;
+      font-size: 12px;
+      font-family: monospace;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .settings-input:focus { border-color: rgba(150,130,220,0.4); }
+    .settings-hint {
+      font-size: 11px;
+      color: #666677;
+      margin-top: 4px;
+    }
+    .settings-hint.ok { color: #66cc88; }
+    .settings-guide {
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .guide-title {
+      font-size: 12px;
+      color: #aaaabb;
+      margin-bottom: 8px;
+    }
+    .settings-guide ol {
+      font-size: 11px;
+      color: #888899;
+      line-height: 1.8;
+      padding-left: 18px;
+    }
+    .settings-guide code {
+      background: rgba(255,255,255,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+    .settings-guide a {
+      color: #9999cc;
+      text-decoration: none;
+    }
+    .settings-save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #6a5acd, #8366d8);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .settings-save-btn:hover { opacity: 0.85; }
 
     /* ========== 删除按钮 ========== */
     .delete-btn {
@@ -656,6 +795,7 @@
     <button class="tool-btn" id="exportBtn">⬇ 导出备份</button>
     <button class="tool-btn" id="importBtn">⬆ 导入备份</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
+    <button class="tool-btn" id="settingsBtn">⚙ 设置</button>
   </div>
 
   <!-- 时间线 -->
@@ -763,6 +903,11 @@
     <div class="music-url-row">
       <input type="text" class="music-url-input" id="musicUrlInput" placeholder="或直接粘贴音乐链接 (URL)">
     </div>
+    <div class="music-upload-row">
+      <button class="music-upload-btn" id="musicUploadBtn">📁 上传本地音乐到仓库</button>
+    </div>
+    <input type="file" id="musicFile" accept="audio/*" style="display:none">
+    <div class="music-upload-status" id="musicUploadStatus"></div>
     <div class="detail-music">
       <button class="music-play-btn" id="musicBtn">▶</button>
       <div class="music-info">
@@ -775,6 +920,32 @@
     <audio id="audioPlayer" preload="none"></audio>
 
     <button class="delete-btn" id="deleteBeadBtn">🗑 删除这颗珠子</button>
+  </div>
+
+  <!-- 设置弹窗：GitHub Token -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-modal">
+      <button class="settings-close" id="settingsCloseBtn">&times;</button>
+      <div class="settings-title">⚙ 设置</div>
+      <div class="settings-sub">上传音乐需要 GitHub 个人访问令牌</div>
+      <div class="settings-section">
+        <label class="settings-label">GitHub Personal Access Token</label>
+        <input type="password" class="settings-input" id="tokenInput" placeholder="github_pat_xxxx... 或 ghp_xxxx...">
+        <div class="settings-hint" id="tokenStatus">未配置</div>
+      </div>
+      <div class="settings-guide">
+        <div class="guide-title">如何获取 Token：</div>
+        <ol>
+          <li>打开 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a></li>
+          <li>Token name 随便填，如 <code>life-beads</code></li>
+          <li>Expiration 选 1 year</li>
+          <li>Repository access 选 <b>Only select repositories</b> → 选 <code>life-beads</code></li>
+          <li>Permissions → Repository permissions → <b>Contents: Read and write</b></li>
+          <li>点 Generate token，复制生成的 token 粘贴到上方</li>
+        </ol>
+      </div>
+      <button class="settings-save-btn" id="tokenSaveBtn">保存 Token</button>
+    </div>
   </div>
 
   <script>
@@ -1702,6 +1873,145 @@
       closeDetail();
       renderBeads();
       renderIndex();
+    });
+
+    /* ==========================================================
+       十二、GitHub Token 设置 + 本地音乐上传
+       通过 GitHub Contents API 把音乐文件上传到仓库 music/ 文件夹，
+       返回 raw URL 供 audio 播放。需用户配置 fine-grained token。
+       ========================================================== */
+    const REPO_OWNER = 'Luna-yogurt';
+    const REPO_NAME = 'life-beads';
+
+    function getGitHubToken() {
+      return localStorage.getItem('life-beads-gh-token') || '';
+    }
+    function setGitHubToken(token) {
+      localStorage.setItem('life-beads-gh-token', token);
+    }
+
+    /* --- 设置弹窗交互 --- */
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const tokenInput = document.getElementById('tokenInput');
+    const tokenStatus = document.getElementById('tokenStatus');
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      tokenInput.value = getGitHubToken();
+      tokenStatus.textContent = getGitHubToken() ? '✓ 已配置' : '未配置';
+      tokenStatus.className = getGitHubToken() ? 'settings-hint ok' : 'settings-hint';
+      settingsOverlay.classList.add('show');
+    });
+    document.getElementById('settingsCloseBtn').addEventListener('click', () => settingsOverlay.classList.remove('show'));
+    settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('show'); });
+
+    document.getElementById('tokenSaveBtn').addEventListener('click', () => {
+      const token = tokenInput.value.trim();
+      if (!token) { tokenStatus.textContent = '请输入 Token'; return; }
+      setGitHubToken(token);
+      tokenStatus.textContent = '✓ 已保存，正在校验…';
+      tokenStatus.className = 'settings-hint';
+      fetch('https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME, {
+        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+      }).then(r => {
+        if (r.ok) { tokenStatus.textContent = '✓ Token 有效，可以上传音乐了'; tokenStatus.className = 'settings-hint ok'; }
+        else { tokenStatus.textContent = '✗ Token 无效或权限不足（需要 Contents 读写权限）'; tokenStatus.className = 'settings-hint'; }
+      }).catch(() => {
+        tokenStatus.textContent = '✗ 网络错误，无法校验（可能需要代理）';
+        tokenStatus.className = 'settings-hint';
+      });
+    });
+
+    /* --- 本地音乐上传 --- */
+    const musicUploadBtn = document.getElementById('musicUploadBtn');
+    const musicFileInput = document.getElementById('musicFile');
+    const musicUploadStatus = document.getElementById('musicUploadStatus');
+
+    musicUploadBtn.addEventListener('click', () => {
+      if (!getGitHubToken()) {
+        musicUploadStatus.textContent = '⚠ 请先在「⚙ 设置」里配置 GitHub Token';
+        musicUploadStatus.className = 'music-upload-status error';
+        tokenInput.value = '';
+        settingsOverlay.classList.add('show');
+        return;
+      }
+      musicFileInput.click();
+    });
+
+    musicFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      e.target.value = '';
+
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (!bead) { musicUploadStatus.textContent = '请先打开一颗珠子'; return; }
+
+      // 文件大小限制（GitHub 单文件 100MB，但 base64 会膨胀 ~33%）
+      if (file.size > 70 * 1024 * 1024) {
+        musicUploadStatus.textContent = '✗ 文件过大（>70MB），请选小一点的音频';
+        musicUploadStatus.className = 'music-upload-status error';
+        return;
+      }
+
+      const token = getGitHubToken();
+      musicUploadBtn.disabled = true;
+      musicUploadStatus.textContent = '⏳ 正在上传 ' + file.name + ' …';
+      musicUploadStatus.className = 'music-upload-status';
+
+      try {
+        // 1. 读取文件为 base64
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // 2. 构造安全文件名 + 路径
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = 'music/' + Date.now() + '-' + safeName;
+
+        // 3. 调用 GitHub Contents API 上传
+        const apiRes = await fetch('https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: '上传音乐: ' + file.name, content: base64 })
+        });
+
+        if (!apiRes.ok) {
+          const errData = await apiRes.json().catch(() => ({}));
+          throw new Error(errData.message || ('HTTP ' + apiRes.status));
+        }
+
+        // 4. 生成 raw URL 供播放
+        const rawUrl = 'https://raw.githubusercontent.com/' + REPO_OWNER + '/' + REPO_NAME + '/main/' + path;
+
+        // 5. 存到珠子
+        bead.musicUrl = rawUrl;
+        bead.music = file.name.replace(/\.[^.]+$/, '');
+        saveBeads();
+        updateDetailPreview(bead);
+
+        musicUploadStatus.textContent = '✓ 上传成功，正在播放…';
+        musicUploadStatus.className = 'music-upload-status success';
+
+        // 6. 自动加载播放
+        const audio = document.getElementById('audioPlayer');
+        audio.src = rawUrl;
+        audio.play().catch(() => {});
+        document.getElementById('musicBtn').textContent = '⏸';
+        document.getElementById('musicUrlInput').value = rawUrl;
+
+        setTimeout(() => { musicUploadStatus.textContent = ''; musicUploadStatus.className = 'music-upload-status'; }, 4000);
+      } catch (err) {
+        musicUploadStatus.textContent = '✗ 上传失败：' + err.message;
+        musicUploadStatus.className = 'music-upload-status error';
+      } finally {
+        musicUploadBtn.disabled = false;
+      }
     });
 
     /* ==========================================================
