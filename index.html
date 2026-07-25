@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人生珠子</title>
+  <style>
+    /* ========== 基础重置 ========== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a14;
+      color: #e8e8ec;
+      font-family: -apple-system, "Microsoft YaHei", sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ========== 页面标题 ========== */
+    .header {
+      text-align: center;
+      padding: 44px 20px 14px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: #e8e8ec;
+    }
+    .header p {
+      font-size: 12px;
+      color: #555566;
+      margin-top: 10px;
+      letter-spacing: 2px;
+    }
+
+    /* ========== 顶部工具栏 ========== */
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 20px 8px;
+    }
+    .tool-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #aaaabb;
+      font-size: 12px;
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.25s;
+    }
+    .tool-btn:hover {
+      background: rgba(255,255,255,0.09);
+      color: #e8e8ec;
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    /* ========== 时间线容器 ========== */
+    .timeline-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px 20px 20px;
+    }
+    .timeline-svg {
+      width: 100%;
+      height: 520px;
+      display: block;
+    }
+    /* 时间线曲线 —— 淡淡的虚线，像一串隐约的丝线 */
+    .timeline-path {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.07);
+      stroke-width: 2;
+      stroke-dasharray: 4 8;
+    }
+
+    /* ========== 珠子交互 ==========
+       关键修复：用嵌套双层 g 分离定位与缩放。
+       外层 .bead-group 只管 translate（贴曲线），不参与 CSS transform。
+       内层 .bead-inner 管 scale（hover 放大），不会覆盖外层 translate。 */
+    .bead-group {
+      cursor: pointer;
+    }
+    .bead-inner {
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: 0 0;
+    }
+    .bead-group:hover .bead-inner {
+      transform: scale(1.22);
+    }
+    .bead-group.highlight .bead-inner {
+      transform: scale(1.3);
+    }
+    /* 珠子标题标签 —— 默认隐藏，hover 浮现 */
+    .bead-title-label {
+      font-size: 12px;
+      fill: #bbbccc;
+      text-anchor: middle;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .bead-group:hover .bead-title-label,
+    .bead-group.highlight .bead-title-label {
+      opacity: 1;
+    }
+    /* 珠子时间标签 —— 常驻显示完整日期 */
+    .bead-time-label {
+      font-size: 9px;
+      fill: #777888;
+      text-anchor: middle;
+      pointer-events: none;
+      letter-spacing: 0.3px;
+    }
+
+    /* ========== 底部提示 ========== */
+    .hint {
+      text-align: center;
+      padding: 8px;
+      font-size: 11px;
+      color: #444455;
+      letter-spacing: 1px;
+    }
+
+    /* ========== 时间索引面板（左侧滑出） ========== */
+    .index-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 5, 12, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+      z-index: 10;
+    }
+    .index-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .index-panel {
+      position: fixed;
+      top: 0; left: 0;
+      width: 320px;
+      max-width: 85vw;
+      height: 100vh;
+      background: #12121f;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      transform: translateX(-100%);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 20;
+      overflow-y: auto;
+      padding: 28px 24px;
+    }
+    .index-panel.active {
+      transform: translateX(0);
+    }
+    .index-close {
+      position: absolute;
+      top: 18px; right: 18px;
+      width: 34px; height: 34px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      background: transparent;
+      color: #888899;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .index-close:hover { border-color: rgba(255,255,255,0.3); color: #e8e8ec; }
+    .index-title {
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+    .index-sub {
+      font-size: 11px;
+      color: #555566;
+      letter-spacing: 1px;
+      margin-bottom: 22px;
+    }
+    .index-year {
+      font-size: 13px;
+      color: #9999aa;
+      letter-spacing: 2px;
+      padding: 14px 0 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .index-year:hover { color: #ccccee; }
+    .index-year:first-of-type { border-top: none; }
+    .index-year .year-count {
+      font-size: 10px;
+      color: #555566;
+      margin-left: 6px;
+    }
+    .index-month {
+      font-size: 11px;
+      color: #666677;
+      margin: 10px 0 4px 6px;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .index-month:hover { color: #aaaabb; }
+    .index-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px 7px 6px;
+      margin-left: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .index-item:hover { background: rgba(255,255,255,0.05); }
+    .index-item-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .index-item-text {
+      font-size: 12px;
+      color: #bbbccc;
+    }
+    .index-item-date {
+      font-size: 10px;
+      color: #555566;
+      margin-left: auto;
+      font-family: monospace;
+    }
+
+    /* ========== 详情面板（右侧滑出） ========== */
+    .detail-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 5, 12, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+      z-index: 30;
+    }
+    .detail-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .detail-panel {
+      position: fixed;
+      top: 0; right: 0;
+      width: 480px;
+      max-width: 92vw;
+      height: 100vh;
+      background: #12121f;
+      border-left: 1px solid rgba(255,255,255,0.08);
+      transform: translateX(100%);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 40;
+      overflow-y: auto;
+      padding: 32px 34px;
+    }
+    .detail-panel.active {
+      transform: translateX(0);
+    }
+    .detail-close {
+      position: absolute;
+      top: 20px; right: 24px;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      background: transparent;
+      color: #888899;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .detail-close:hover { border-color: rgba(255,255,255,0.3); color: #e8e8ec; }
+    .detail-bead-preview {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      margin-bottom: 18px;
+    }
+    .detail-title {
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+    .detail-meta {
+      font-size: 12px;
+      color: #666677;
+      margin-bottom: 22px;
+      letter-spacing: 1px;
+    }
+    .detail-tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .detail-tag {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: #aaaabb;
+    }
+
+    /* —— 编辑区 —— */
+    .edit-section {
+      margin-bottom: 22px;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .edit-label {
+      font-size: 11px;
+      color: #777788;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .edit-row:last-child { margin-bottom: 0; }
+    .edit-row label {
+      font-size: 12px;
+      color: #9999aa;
+      min-width: 56px;
+    }
+    input[type="date"], input[type="text"] {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      color: #ddddee;
+      font-size: 13px;
+      padding: 6px 10px;
+      font-family: inherit;
+    }
+    input[type="date"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: rgba(255,255,255,0.25);
+    }
+    /* 材质选择器 */
+    .material-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .material-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 2px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.07);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .material-option:hover { background: rgba(255,255,255,0.05); }
+    .material-option.selected {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.07);
+    }
+    .material-option-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+    }
+    .material-option-name {
+      font-size: 9px;
+      color: #888899;
+    }
+    /* 调色器 */
+    .tint-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .tint-row label {
+      font-size: 11px;
+      color: #888899;
+      min-width: 50px;
+    }
+    input[type="color"] {
+      width: 38px; height: 28px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+    .tint-hex {
+      font-size: 11px;
+      color: #666677;
+      font-family: monospace;
+    }
+
+    .detail-photo {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #444455;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .detail-text {
+      font-size: 14px;
+      line-height: 2;
+      color: #ccccee;
+      margin-bottom: 24px;
+      background: transparent;
+      border: none;
+      width: 100%;
+      resize: vertical;
+      min-height: 60px;
+      font-family: inherit;
+      outline: none;
+    }
+    .detail-music {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+    }
+    .music-play-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .music-info { flex: 1; }
+    .music-title {
+      font-size: 12px;
+      color: #aaaabb;
+      margin-bottom: 4px;
+    }
+    .music-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+    }
+    .music-progress {
+      width: 35%;
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    /* ========== 入场动画 ========== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .detail-panel.active > * {
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    .detail-panel.active > *:nth-child(2) { animation-delay: 0.06s; }
+    .detail-panel.active > *:nth-child(3) { animation-delay: 0.12s; }
+    .detail-panel.active > *:nth-child(4) { animation-delay: 0.18s; }
+    .detail-panel.active > *:nth-child(5) { animation-delay: 0.24s; }
+    .detail-panel.active > *:nth-child(6) { animation-delay: 0.30s; }
+    .detail-panel.active > *:nth-child(7) { animation-delay: 0.36s; }
+    .detail-panel.active > *:nth-child(8) { animation-delay: 0.42s; }
+    .detail-panel.active > *:nth-child(9) { animation-delay: 0.48s; }
+  </style>
+</head>
+<body>
+
+  <!-- 页面标题 -->
+  <div class="header">
+    <h1>人 生 珠 子</h1>
+    <p>每一颗，都是时光里的闪光</p>
+  </div>
+
+  <!-- 顶部工具栏 -->
+  <div class="toolbar">
+    <button class="tool-btn" id="indexBtn">⋰ 时间索引</button>
+    <button class="tool-btn" id="addBeadBtn">＋ 新增珠子</button>
+  </div>
+
+  <!-- 时间线 -->
+  <div class="timeline-container">
+    <svg class="timeline-svg" id="timelineSvg" viewBox="0 0 1200 520">
+      <defs id="beadDefs">
+        <!-- 高斯模糊滤镜：给高光做柔和边缘 -->
+        <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5"/>
+        </filter>
+        <!-- 珠子外发光滤镜：让珠子有微弱的光晕氛围 -->
+        <filter id="beadGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <!-- 珠子底部投影滤镜：让珠子有浮起感 -->
+        <filter id="beadDrop" x="-60%" y="-20%" width="220%" height="160%">
+          <feGaussianBlur stdDeviation="3" in="SourceAlpha"/>
+          <feOffset dx="0" dy="4" result="offsetblur"/>
+          <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+          <feMerge>
+            <feMergeNode/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <!-- 自由曲线时间线：这条曲线就是珠子要"贴合"的丝线 -->
+      <path class="timeline-path" id="timelinePath"
+            d="M 60 330 C 220 90, 420 500, 620 190 S 920 430, 1140 210"/>
+      <!-- 珠子层：由 JS 沿曲线采样定位后动态插入 -->
+      <g id="beadsLayer"></g>
+    </svg>
+  </div>
+
+  <!-- 底部提示 -->
+  <div class="hint">点击珠子打开一段记忆 · 顶部索引可按时间查找</div>
+
+  <!-- 时间索引面板 -->
+  <div class="index-overlay" id="indexOverlay"></div>
+  <div class="index-panel" id="indexPanel">
+    <button class="index-close" id="indexCloseBtn">&times;</button>
+    <div class="index-title">时 间 索 引</div>
+    <div class="index-sub">按年 · 月 · 日 查找你的珠子</div>
+    <div id="indexTree"></div>
+  </div>
+
+  <!-- 详情面板 -->
+  <div class="detail-overlay" id="overlay"></div>
+  <div class="detail-panel" id="detailPanel">
+    <button class="detail-close" id="closeBtn">&times;</button>
+    <div class="detail-bead-preview" id="detailBead"></div>
+    <div class="detail-title" id="detailTitle"></div>
+    <div class="detail-meta" id="detailMeta"></div>
+    <div class="detail-tags" id="detailTags"></div>
+
+    <!-- 编辑区：时间 / 材质 / 调色 -->
+    <div class="edit-section">
+      <div class="edit-label">编辑这颗珠子</div>
+      <div class="edit-row">
+        <label>标题</label>
+        <input type="text" id="editTitle" placeholder="给这颗珠子起个名字">
+      </div>
+      <div class="edit-row">
+        <label>日期</label>
+        <input type="date" id="editDate">
+      </div>
+      <div class="edit-label" style="margin-top:14px">材质（选择基础形态）</div>
+      <div class="material-grid" id="materialGrid"></div>
+      <div class="edit-label" style="margin-top:14px">调色（覆盖材质默认色）</div>
+      <div class="tint-row">
+        <label>高光</label>
+        <input type="color" id="tintHighlight">
+        <span class="tint-hex" id="hexHighlight"></span>
+      </div>
+      <div class="tint-row">
+        <label>中间</label>
+        <input type="color" id="tintMid">
+        <span class="tint-hex" id="hexMid"></span>
+      </div>
+      <div class="tint-row">
+        <label>暗部</label>
+        <input type="color" id="tintShadow">
+        <span class="tint-hex" id="hexShadow"></span>
+      </div>
+    </div>
+
+    <div class="detail-photo" id="photoArea">[ 照片区 · 后续支持上传 ]</div>
+    <textarea class="detail-text" id="detailText" placeholder="在这里写下这段时光的故事……"></textarea>
+    <div class="detail-music">
+      <button class="music-play-btn" id="musicBtn"></button>
+      <div class="music-info">
+        <div class="music-title" id="musicTitle"></div>
+        <div class="music-bar">
+          <div class="music-progress" id="musicProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================
+       一、珠子材质库
+       每个材质定义 render 类型 + 默认三色调板（高光/中间/暗部）。
+       render 类型决定质感层的渲染方式，调色覆盖默认色。
+       加新材质只需往这里加一条。
+       ========================================================== */
+    const MATERIALS = {
+      pearl:     { name: '珍珠',    render: 'pearl',    tint: { highlight: '#FFF4D6', mid: '#E8B86D', shadow: '#9A6A28' } },
+      glass:     { name: '琉璃',    render: 'glass',    tint: { highlight: '#C8F5E4', mid: '#5DCAA5', shadow: '#0F6E56' } },
+      rose:      { name: '蔷薇石',  render: 'gem',      tint: { highlight: '#FBD8E4', mid: '#ED93B1', shadow: '#993556' } },
+      amethyst:  { name: '紫水晶',  render: 'crystal',  tint: { highlight: '#DDD9F8', mid: '#AFA9EC', shadow: '#534AB7' } },
+      sapphire:  { name: '蓝宝石',  render: 'gem',      tint: { highlight: '#C5DDF4', mid: '#85B7EB', shadow: '#185FA5' } },
+      amber:     { name: '琥珀',    render: 'glass',    tint: { highlight: '#FAD4BE', mid: '#F0997B', shadow: '#993C1D' } },
+      wood:      { name: '木质',    render: 'wood',     tint: { highlight: '#D9A86C', mid: '#A06A35', shadow: '#5C3A18' } },
+      metal:     { name: '金属',    render: 'metal',    tint: { highlight: '#F0F0F5', mid: '#A8A8B8', shadow: '#4A4A5A' } },
+      obsidian:  { name: '黑曜石',  render: 'obsidian', tint: { highlight: '#5A5A6E', mid: '#2A2A38', shadow: '#0A0A14' } },
+      moonstone: { name: '月光石',  render: 'moonstone', tint: { highlight: '#EEF4FF', mid: '#C8D4F0', shadow: '#8A98C8' } },
+      jade:      { name: '玉石',    render: 'jade',     tint: { highlight: '#D4F0D8', mid: '#7AC898', shadow: '#2E7050' } }
+    };
+
+    /* ==========================================================
+       二、珠子数据
+       date 用 ISO 格式（YYYY-MM-DD），系统自动按时间排序。
+       materialKey 引用材质库；tint 留空用默认色，填了覆盖调色。
+       ========================================================== */
+    let beads = [
+      { id: 0, title: '毕业那天', date: '2023-06-15', materialKey: 'pearl', tint: null, emotion: '自由 · 释然', text: '四年终于结束了。走出校门的那一刻，风很大，心里空空的，但那种空是好的空。', music: 'Good Riddance — Green Day' },
+      { id: 1, title: '独自旅行', date: '2023-12-08', materialKey: 'glass', tint: null, emotion: '自由 · 清醒', text: '一个人坐在海边看了整晚的星星。原来孤独可以这么舒服，不需要跟任何人解释自己。', music: 'Weightless — Marconi Union' },
+      { id: 2, title: '初次相遇', date: '2024-03-22', materialKey: 'rose', tint: null, emotion: '心动 · 温柔', text: '你笑起来的样子，让我觉得之前的所有等待都有了意义。', music: 'La Vie En Rose — Louis Armstrong' },
+      { id: 3, title: '人生的转折', date: '2024-09-10', materialKey: 'amethyst', tint: null, emotion: '蜕变 · 不确定', text: '那天雨刚停，我站在路口，突然想通了一些事。有些路只能自己走，这不是孤独，是成长。', music: 'River Flows in You — Yiruma' },
+      { id: 4, title: '一个顿悟', date: '2025-01-18', materialKey: 'sapphire', tint: null, emotion: '通透 · 平静', text: '原来所谓的"想开了"，不是突然有了答案，而是终于不再执着于找答案了。', music: 'Clair de Lune — Debussy' },
+      { id: 5, title: '此刻', date: '2025-07-25', materialKey: 'amber', tint: null, emotion: '温暖 · 进行时', text: '你正在读这段文字。这就是此刻。这颗珠子还在发光，因为故事还在继续。', music: 'Here Comes the Sun — The Beatles' }
+    ];
+    let nextId = 6;
+
+    /* ==========================================================
+       三、核心渲染
+       关键修复：嵌套双层 g —— 外层 translate 贴曲线，内层 scale 做 hover。
+       这样 CSS transform: scale 不会覆盖 SVG transform: translate。
+       珠子位置用 path.getPointAtLength() 精确取曲线坐标。
+       ========================================================== */
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const path = document.getElementById('timelinePath');
+    const beadsLayer = document.getElementById('beadsLayer');
+    const defs = document.getElementById('beadDefs');
+
+    // 按日期升序排序
+    function sortedBeads() {
+      return [...beads].sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // #RRGGBB → "r,g,b"
+    function hexToRgbTriplet(hex) {
+      const h = hex.replace('#', '');
+      return parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16);
+    }
+
+    // 完整日期：2023.06.15
+    function compactDate(iso) {
+      const d = new Date(iso);
+      return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+    }
+    // 简短中文：6月15日
+    function shortDate(iso) {
+      const d = new Date(iso);
+      return (d.getMonth()+1) + '月' + d.getDate() + '日';
+    }
+    // 完整中文：2023 年 6 月 15 日
+    function fullDate(iso) {
+      const d = new Date(iso);
+      return d.getFullYear() + ' 年 ' + (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日';
+    }
+
+    // 为珠子生成 SVG 径向渐变（放进 defs）
+    function ensureGradient(bead) {
+      const mat = MATERIALS[bead.materialKey];
+      const tint = bead.tint || mat.tint;
+      const gid = 'grad_' + bead.id;
+      if (document.getElementById(gid)) return gid;
+      const def = document.createElementNS(svgNS, 'radialGradient');
+      def.setAttribute('id', gid);
+      def.setAttribute('cx', '35%');
+      def.setAttribute('cy', '30%');
+      def.setAttribute('r', '70%');
+      [[0, tint.highlight], [42, tint.mid], [100, tint.shadow]].forEach(([off, col]) => {
+        const s = document.createElementNS(svgNS, 'stop');
+        s.setAttribute('offset', off + '%');
+        s.setAttribute('stop-color', col);
+        def.appendChild(s);
+      });
+      defs.appendChild(def);
+      return gid;
+    }
+
+    /* ==========================================================
+       四、材质质感层（大幅增强）
+       每种材质用不同的 SVG 图层组合，追求视觉差异明显。
+       ========================================================== */
+    function buildTextureLayers(bead, r) {
+      const mat = MATERIALS[bead.materialKey];
+      const tint = bead.tint || mat.tint;
+      const layers = [];
+      const ox = -r * 0.28, oy = -r * 0.32; // 高光偏左上
+
+      if (mat.render === 'pearl') {
+        // —— 珍珠：多层高光 + 虹彩晕环 + 外发光 ——
+        // 外发光晕
+        const glow = document.createElementNS(svgNS, 'circle');
+        glow.setAttribute('r', r + 4);
+        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.12)');
+        glow.setAttribute('filter', 'url(#beadGlow)');
+        layers.push(glow);
+        // 大柔和高光
+        const hl1 = document.createElementNS(svgNS, 'circle');
+        hl1.setAttribute('cx', ox); hl1.setAttribute('cy', oy);
+        hl1.setAttribute('r', r * 0.5);
+        hl1.setAttribute('fill', 'rgba(255,255,255,0.5)');
+        hl1.setAttribute('filter', 'url(#softBlur)');
+        layers.push(hl1);
+        // 锐利小高光
+        const hl2 = document.createElementNS(svgNS, 'circle');
+        hl2.setAttribute('cx', ox * 1.1); hl2.setAttribute('cy', oy * 1.1);
+        hl2.setAttribute('r', r * 0.18);
+        hl2.setAttribute('fill', 'rgba(255,255,255,0.85)');
+        layers.push(hl2);
+        // 虹彩边缘环
+        const ring = document.createElementNS(svgNS, 'circle');
+        ring.setAttribute('r', r - 1);
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
+        ring.setAttribute('stroke-width', '1.5');
+        layers.push(ring);
+        // 底部反光
+        const bl = document.createElementNS(svgNS, 'ellipse');
+        bl.setAttribute('rx', r * 0.4); bl.setAttribute('ry', r * 0.12);
+        bl.setAttribute('cy', r * 0.5);
+        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.25)');
+        bl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(bl);
+
+      } else if (mat.render === 'glass') {
+        // —— 琉璃/玻璃：通透 + 锐利边缘 + 气泡 ——
+        // 边缘亮线（强）
+        const edge = document.createElementNS(svgNS, 'circle');
+        edge.setAttribute('r', r);
+        edge.setAttribute('fill', 'none');
+        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.55)');
+        edge.setAttribute('stroke-width', '1.5');
+        layers.push(edge);
+        // 内边缘暗线（增加通透感）
+        const edgeDark = document.createElementNS(svgNS, 'circle');
+        edgeDark.setAttribute('r', r - 2);
+        edgeDark.setAttribute('fill', 'none');
+        edgeDark.setAttribute('stroke', 'rgba(0,0,0,0.15)');
+        edgeDark.setAttribute('stroke-width', '1');
+        layers.push(edgeDark);
+        // 大高光（半圆弧形）
+        const hl = document.createElementNS(svgNS, 'path');
+        hl.setAttribute('d', 'M ' + (ox - r*0.15) + ' ' + (oy - r*0.1) + ' A ' + (r*0.5) + ' ' + (r*0.5) + ' 0 0 1 ' + (ox + r*0.25) + ' ' + (oy + r*0.3));
+        hl.setAttribute('fill', 'none');
+        hl.setAttribute('stroke', 'rgba(255,255,255,0.7)');
+        hl.setAttribute('stroke-width', '2');
+        hl.setAttribute('stroke-linecap', 'round');
+        layers.push(hl);
+        // 锐利点高光
+        const dot = document.createElementNS(svgNS, 'circle');
+        dot.setAttribute('cx', ox * 1.2); dot.setAttribute('cy', oy * 1.2);
+        dot.setAttribute('r', r * 0.1);
+        dot.setAttribute('fill', 'rgba(255,255,255,0.9)');
+        layers.push(dot);
+        // 气泡
+        const bub = document.createElementNS(svgNS, 'circle');
+        bub.setAttribute('cx', r * 0.2); bub.setAttribute('cy', r * 0.25);
+        bub.setAttribute('r', r * 0.1);
+        bub.setAttribute('fill', 'rgba(255,255,255,0.4)');
+        layers.push(bub);
+        // 底部反光
+        const bl = document.createElementNS(svgNS, 'ellipse');
+        bl.setAttribute('rx', r * 0.45); bl.setAttribute('ry', r * 0.1);
+        bl.setAttribute('cy', r * 0.5);
+        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
+        bl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(bl);
+
+      } else if (mat.render === 'gem') {
+        // —— 刻面宝石：三角形刻面，每面明度不同 ——
+        const pts = [
+          [0, -r], [r*0.87, -r*0.5], [r*0.87, r*0.5], [0, r], [-r*0.87, r*0.5], [-r*0.87, -r*0.5]
+        ];
+        const shades = [
+          'rgba(255,255,255,0.6)',
+          'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.55)',
+          'rgba(' + hexToRgbTriplet(tint.mid) + ',0.35)',
+          'rgba(0,0,0,0.22)',
+          'rgba(' + hexToRgbTriplet(tint.mid) + ',0.3)',
+          'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.4)'
+        ];
+        for (let i = 0; i < 6; i++) {
+          const a = pts[i], b = pts[(i+1)%6];
+          const poly = document.createElementNS(svgNS, 'polygon');
+          poly.setAttribute('points', '0,0 ' + a[0] + ',' + a[1] + ' ' + b[0] + ',' + b[1]);
+          poly.setAttribute('fill', shades[i]);
+          poly.setAttribute('opacity', '0.65');
+          layers.push(poly);
+        }
+        // 顶部强高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.22);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.8)');
+        layers.push(hl);
+        // 刻面线
+        for (let i = 0; i < 6; i++) {
+          const ln = document.createElementNS(svgNS, 'line');
+          ln.setAttribute('x1', 0); ln.setAttribute('y1', 0);
+          ln.setAttribute('x2', pts[i][0]); ln.setAttribute('y2', pts[i][1]);
+          ln.setAttribute('stroke', 'rgba(255,255,255,0.15)');
+          ln.setAttribute('stroke-width', '0.5');
+          layers.push(ln);
+        }
+
+      } else if (mat.render === 'crystal') {
+        // —— 水晶：内部放射光芒 + 通透高光 + 微发光 ——
+        // 外发光
+        const glow = document.createElementNS(svgNS, 'circle');
+        glow.setAttribute('r', r + 3);
+        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.1)');
+        glow.setAttribute('filter', 'url(#beadGlow)');
+        layers.push(glow);
+        // 放射光芒线
+        for (let i = 0; i < 8; i++) {
+          const ang = (Math.PI / 4) * i;
+          const ln = document.createElementNS(svgNS, 'line');
+          ln.setAttribute('x1', 0); ln.setAttribute('y1', 0);
+          ln.setAttribute('x2', Math.cos(ang) * r * 0.85);
+          ln.setAttribute('y2', Math.sin(ang) * r * 0.85);
+          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.35)');
+          ln.setAttribute('stroke-width', '0.8');
+          layers.push(ln);
+        }
+        // 高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.3);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.75)');
+        hl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(hl);
+        // 锐利高光点
+        const dot = document.createElementNS(svgNS, 'circle');
+        dot.setAttribute('cx', ox * 1.2); dot.setAttribute('cy', oy * 1.2);
+        dot.setAttribute('r', r * 0.08);
+        dot.setAttribute('fill', 'rgba(255,255,255,0.95)');
+        layers.push(dot);
+
+      } else if (mat.render === 'wood') {
+        // —— 木质：年轮纹理 + 哑光表面 ——
+        // 年轮线
+        for (let i = 1; i <= 3; i++) {
+          const ring = document.createElementNS(svgNS, 'ellipse');
+          ring.setAttribute('rx', r * (0.35 + i*0.18));
+          ring.setAttribute('ry', r * (0.28 + i*0.14));
+          ring.setAttribute('fill', 'none');
+          ring.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.4)');
+          ring.setAttribute('stroke-width', '0.8');
+          ring.setAttribute('transform', 'rotate(-12)');
+          layers.push(ring);
+        }
+        // 哑光高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.35);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.2)');
+        hl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(hl);
+        // 木纹细线
+        for (let i = 0; i < 3; i++) {
+          const ln = document.createElementNS(svgNS, 'path');
+          const yo = -r * 0.3 + i * r * 0.3;
+          ln.setAttribute('d', 'M ' + (-r*0.7) + ' ' + yo + ' Q 0 ' + (yo + r*0.1) + ' ' + (r*0.7) + ' ' + yo);
+          ln.setAttribute('fill', 'none');
+          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.2)');
+          ln.setAttribute('stroke-width', '0.5');
+          layers.push(ln);
+        }
+
+      } else if (mat.render === 'metal') {
+        // —— 金属：强对比反光带 + 暗部 ——
+        // 顶部强反光带
+        const band = document.createElementNS(svgNS, 'ellipse');
+        band.setAttribute('rx', r * 0.75); band.setAttribute('ry', r * 0.2);
+        band.setAttribute('cy', -r * 0.4);
+        band.setAttribute('fill', 'rgba(255,255,255,0.9)');
+        layers.push(band);
+        // 中间过渡带
+        const band2 = document.createElementNS(svgNS, 'ellipse');
+        band2.setAttribute('rx', r * 0.8); band2.setAttribute('ry', r * 0.15);
+        band2.setAttribute('cy', -r * 0.1);
+        band2.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.4)');
+        layers.push(band2);
+        // 底部暗带
+        const band3 = document.createElementNS(svgNS, 'ellipse');
+        band3.setAttribute('rx', r * 0.85); band3.setAttribute('ry', r * 0.12);
+        band3.setAttribute('cy', r * 0.45);
+        band3.setAttribute('fill', 'rgba(0,0,0,0.3)');
+        layers.push(band3);
+        // 边缘亮线
+        const edge = document.createElementNS(svgNS, 'circle');
+        edge.setAttribute('r', r);
+        edge.setAttribute('fill', 'none');
+        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.5)');
+        edge.setAttribute('stroke-width', '0.8');
+        layers.push(edge);
+
+      } else if (mat.render === 'obsidian') {
+        // —— 黑曜石：深邃 + 银色裂痕 + 玻璃光泽 ——
+        // 边缘亮线
+        const edge = document.createElementNS(svgNS, 'circle');
+        edge.setAttribute('r', r);
+        edge.setAttribute('fill', 'none');
+        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.6)');
+        edge.setAttribute('stroke-width', '1.2');
+        layers.push(edge);
+        // 银色裂痕
+        for (let i = 0; i < 3; i++) {
+          const ln = document.createElementNS(svgNS, 'path');
+          const a = (Math.PI * 2 / 3) * i + 0.5;
+          const x1 = Math.cos(a) * r * 0.3;
+          const y1 = Math.sin(a) * r * 0.3;
+          const x2 = Math.cos(a + 0.8) * r * 0.7;
+          const y2 = Math.sin(a + 0.8) * r * 0.7;
+          ln.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + (x1+x2)/2 * 1.1 + ' ' + (y1+y2)/2*0.9 + ' L ' + x2 + ' ' + y2);
+          ln.setAttribute('fill', 'none');
+          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.5)');
+          ln.setAttribute('stroke-width', '0.6');
+          ln.setAttribute('opacity', '0.7');
+          layers.push(ln);
+        }
+        // 锐利高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.25);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.6)');
+        layers.push(hl);
+        // 底部反光
+        const bl = document.createElementNS(svgNS, 'ellipse');
+        bl.setAttribute('rx', r * 0.4); bl.setAttribute('ry', r * 0.08);
+        bl.setAttribute('cy', r * 0.5);
+        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.2)');
+        layers.push(bl);
+
+      } else if (mat.render === 'moonstone') {
+        // —— 月光石：乳白 + 蓝白光晕 + 柔和虹彩 ——
+        // 外发光
+        const glow = document.createElementNS(svgNS, 'circle');
+        glow.setAttribute('r', r + 5);
+        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.15)');
+        glow.setAttribute('filter', 'url(#beadGlow)');
+        layers.push(glow);
+        // 大柔和高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.45);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.6)');
+        hl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(hl);
+        // 虹彩光晕（蓝白色）
+        const iris = document.createElementNS(svgNS, 'circle');
+        iris.setAttribute('r', r * 0.6);
+        iris.setAttribute('fill', 'none');
+        iris.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.mid) + ',0.2)');
+        iris.setAttribute('stroke-width', '3');
+        iris.setAttribute('filter', 'url(#softBlur)');
+        layers.push(iris);
+        // 锐利点高光
+        const dot = document.createElementNS(svgNS, 'circle');
+        dot.setAttribute('cx', ox * 1.1); dot.setAttribute('cy', oy * 1.1);
+        dot.setAttribute('r', r * 0.12);
+        dot.setAttribute('fill', 'rgba(255,255,255,0.9)');
+        layers.push(dot);
+
+      } else if (mat.render === 'jade') {
+        // —— 玉石：温润油润 + 柔和高光 ——
+        // 油润高光
+        const hl = document.createElementNS(svgNS, 'circle');
+        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
+        hl.setAttribute('r', r * 0.4);
+        hl.setAttribute('fill', 'rgba(255,255,255,0.45)');
+        hl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(hl);
+        // 内部絮状纹理
+        for (let i = 0; i < 3; i++) {
+          const ln = document.createElementNS(svgNS, 'path');
+          const yo = -r * 0.2 + i * r * 0.2;
+          ln.setAttribute('d', 'M ' + (-r*0.6) + ' ' + yo + ' Q ' + (-r*0.2) + ' ' + (yo + r*0.15) + ' ' + (r*0.5) + ' ' + yo);
+          ln.setAttribute('fill', 'none');
+          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.15)');
+          ln.setAttribute('stroke-width', '1');
+          ln.setAttribute('filter', 'url(#softBlur)');
+          layers.push(ln);
+        }
+        // 底部油润反光
+        const bl = document.createElementNS(svgNS, 'ellipse');
+        bl.setAttribute('rx', r * 0.5); bl.setAttribute('ry', r * 0.15);
+        bl.setAttribute('cy', r * 0.45);
+        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
+        bl.setAttribute('filter', 'url(#softBlur)');
+        layers.push(bl);
+        // 边缘柔和光
+        const edge = document.createElementNS(svgNS, 'circle');
+        edge.setAttribute('r', r - 0.5);
+        edge.setAttribute('fill', 'none');
+        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.25)');
+        edge.setAttribute('stroke-width', '1');
+        layers.push(edge);
+      }
+      return layers;
+    }
+
+    // 主渲染：清空重画所有珠子
+    function renderBeads() {
+      beadsLayer.innerHTML = '';
+      const list = sortedBeads();
+      const total = path.getTotalLength();
+      const n = list.length;
+      list.forEach((bead, i) => {
+        const t = n === 1 ? 0.5 : i / (n - 1);
+        const pt = path.getPointAtLength(t * total);
+        const x = pt.x, y = pt.y;
+        const r = 24 + (i % 3) * 5; // 24~34px，材质细节更清晰
+
+        const gid = ensureGradient(bead);
+
+        // 外层 g：只管 translate（贴曲线定位）
+        const g = document.createElementNS(svgNS, 'g');
+        g.setAttribute('class', 'bead-group');
+        g.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+        g.dataset.id = bead.id;
+        g.setAttribute('filter', 'url(#beadDrop)');
+
+        // 内层 g：管 scale（hover 缩放），不碰 translate
+        const gInner = document.createElementNS(svgNS, 'g');
+        gInner.setAttribute('class', 'bead-inner');
+
+        // 珠子本体
+        const body = document.createElementNS(svgNS, 'circle');
+        body.setAttribute('r', r);
+        body.setAttribute('fill', 'url(#' + gid + ')');
+        gInner.appendChild(body);
+
+        // 质感层
+        buildTextureLayers(bead, r).forEach(l => gInner.appendChild(l));
+
+        g.appendChild(gInner);
+
+        // 时间标签（外层，不缩放，常驻显示完整日期）
+        const timeLabel = document.createElementNS(svgNS, 'text');
+        timeLabel.setAttribute('class', 'bead-time-label');
+        timeLabel.setAttribute('y', r + 18);
+        timeLabel.textContent = compactDate(bead.date);
+        g.appendChild(timeLabel);
+
+        // 标题标签（外层，hover 显示）
+        const titleLabel = document.createElementNS(svgNS, 'text');
+        titleLabel.setAttribute('class', 'bead-title-label');
+        titleLabel.setAttribute('y', -r - 10);
+        titleLabel.textContent = bead.title;
+        g.appendChild(titleLabel);
+
+        g.addEventListener('click', () => showDetail(bead.id));
+        beadsLayer.appendChild(g);
+      });
+    }
+
+    /* ==========================================================
+       五、时间索引：按年 → 月 → 珠子（显示完整日期）
+       ========================================================== */
+    function renderIndex() {
+      const tree = document.getElementById('indexTree');
+      tree.innerHTML = '';
+      const list = sortedBeads();
+      const byYear = {};
+      list.forEach(b => {
+        const y = new Date(b.date).getFullYear();
+        (byYear[y] = byYear[y] || []).push(b);
+      });
+      Object.keys(byYear).sort((a,b) => b-a).forEach(y => {
+        const yearDiv = document.createElement('div');
+        yearDiv.className = 'index-year';
+        yearDiv.innerHTML = y + ' 年<span class="year-count">' + byYear[y].length + ' 颗</span>';
+        tree.appendChild(yearDiv);
+        const byMonth = {};
+        byYear[y].forEach(b => {
+          const m = new Date(b.date).getMonth() + 1;
+          (byMonth[m] = byMonth[m] || []).push(b);
+        });
+        Object.keys(byMonth).sort((a,b) => a-b).forEach(m => {
+          const monthDiv = document.createElement('div');
+          monthDiv.className = 'index-month';
+          monthDiv.textContent = m + ' 月';
+          tree.appendChild(monthDiv);
+          byMonth[m].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(b => {
+            const mat = MATERIALS[b.materialKey];
+            const tint = b.tint || mat.tint;
+            const item = document.createElement('div');
+            item.className = 'index-item';
+            item.innerHTML =
+              '<span class="index-item-dot" style="background:radial-gradient(circle at 35% 30%,' + tint.highlight + ',' + tint.mid + ' 45%,' + tint.shadow + ')"></span>' +
+              '<span class="index-item-text">' + b.title + '</span>' +
+              '<span class="index-item-date">' + compactDate(b.date) + '</span>';
+            item.addEventListener('click', () => {
+              closeIndex();
+              highlightBead(b.id);
+              showDetail(b.id);
+            });
+            tree.appendChild(item);
+          });
+        });
+      });
+    }
+
+    // 高亮某颗珠子
+    function highlightBead(id) {
+      document.querySelectorAll('.bead-group').forEach(g => {
+        g.classList.toggle('highlight', g.dataset.id == id);
+      });
+      setTimeout(() => {
+        document.querySelectorAll('.bead-group').forEach(g => g.classList.remove('highlight'));
+      }, 1600);
+    }
+
+    /* ==========================================================
+       六、详情面板 + 编辑（标题 / 日期 / 材质 / 调色 / 文字）
+       ========================================================== */
+    const overlay = document.getElementById('overlay');
+    const panel = document.getElementById('detailPanel');
+    let currentBeadId = null;
+
+    function buildMaterialGrid() {
+      const grid = document.getElementById('materialGrid');
+      grid.innerHTML = '';
+      Object.entries(MATERIALS).forEach(([key, mat]) => {
+        const opt = document.createElement('div');
+        opt.className = 'material-option';
+        opt.dataset.key = key;
+        const tint = mat.tint;
+        opt.innerHTML =
+          '<span class="material-option-dot" style="background:radial-gradient(circle at 35% 30%,' + tint.highlight + ',' + tint.mid + ' 45%,' + tint.shadow + ')"></span>' +
+          '<span class="material-option-name">' + mat.name + '</span>';
+        opt.addEventListener('click', () => {
+          const bead = beads.find(b => b.id === currentBeadId);
+          if (!bead) return;
+          bead.materialKey = key;
+          bead.tint = null;
+          refreshBeadGradient(bead);
+          renderBeads();
+          syncDetailEditState(bead);
+          updateDetailPreview(bead);
+        });
+        grid.appendChild(opt);
+      });
+    }
+
+    function refreshBeadGradient(bead) {
+      const old = document.getElementById('grad_' + bead.id);
+      if (old) old.remove();
+    }
+
+    function syncDetailEditState(bead) {
+      const mat = MATERIALS[bead.materialKey];
+      const tint = bead.tint || mat.tint;
+      document.querySelectorAll('.material-option').forEach(o => {
+        o.classList.toggle('selected', o.dataset.key === bead.materialKey);
+      });
+      document.getElementById('tintHighlight').value = tint.highlight;
+      document.getElementById('tintMid').value = tint.mid;
+      document.getElementById('tintShadow').value = tint.shadow;
+      document.getElementById('hexHighlight').textContent = tint.highlight;
+      document.getElementById('hexMid').textContent = tint.mid;
+      document.getElementById('hexShadow').textContent = tint.shadow;
+      document.getElementById('editTitle').value = bead.title;
+      document.getElementById('editDate').value = bead.date;
+    }
+
+    function updateDetailPreview(bead) {
+      const mat = MATERIALS[bead.materialKey];
+      const tint = bead.tint || mat.tint;
+      document.getElementById('detailBead').style.background =
+        'radial-gradient(circle at 35% 30%, ' + tint.highlight + ', ' + tint.mid + ' 45%, ' + tint.shadow + ')';
+      document.getElementById('detailTitle').textContent = bead.title;
+      document.getElementById('detailMeta').textContent = fullDate(bead.date) + ' · ' + mat.name + ' · ' + bead.emotion;
+      const tagsDiv = document.getElementById('detailTags');
+      tagsDiv.innerHTML = '';
+      [mat.name, bead.emotion].forEach(tag => {
+        const span = document.createElement('span');
+        span.className = 'detail-tag';
+        span.textContent = tag;
+        tagsDiv.appendChild(span);
+      });
+      document.getElementById('detailText').value = bead.text;
+      document.getElementById('musicTitle').textContent = bead.music;
+      document.getElementById('musicBtn').style.background = tint.mid;
+      document.getElementById('musicProgress').style.background = tint.mid;
+    }
+
+    function showDetail(id) {
+      const bead = beads.find(b => b.id === id);
+      if (!bead) return;
+      currentBeadId = id;
+      syncDetailEditState(bead);
+      updateDetailPreview(bead);
+      overlay.classList.add('active');
+      panel.classList.add('active');
+    }
+    function closeDetail() {
+      overlay.classList.remove('active');
+      panel.classList.remove('active');
+    }
+    document.getElementById('closeBtn').addEventListener('click', closeDetail);
+    overlay.addEventListener('click', closeDetail);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetail(); closeIndex(); } });
+
+    // 标题编辑
+    document.getElementById('editTitle').addEventListener('input', e => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (bead) { bead.title = e.target.value; updateDetailPreview(bead); renderBeads(); renderIndex(); }
+    });
+    // 日期编辑 —— 改完自动重新排序
+    document.getElementById('editDate').addEventListener('change', e => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (bead) { bead.date = e.target.value; updateDetailPreview(bead); renderBeads(); renderIndex(); }
+    });
+    // 文字编辑
+    document.getElementById('detailText').addEventListener('input', e => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (bead) { bead.text = e.target.value; }
+    });
+    // 调色 —— 实时
+    [['tintHighlight','highlight'],['tintMid','mid'],['tintShadow','shadow']].forEach(([inputId, key]) => {
+      document.getElementById(inputId).addEventListener('input', e => {
+        const bead = beads.find(b => b.id === currentBeadId);
+        if (!bead) return;
+        const mat = MATERIALS[bead.materialKey];
+        if (!bead.tint) bead.tint = { ...mat.tint };
+        bead.tint[key] = e.target.value;
+        document.getElementById('hex' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = e.target.value;
+        refreshBeadGradient(bead);
+        renderBeads();
+        updateDetailPreview(bead);
+        renderIndex();
+      });
+    });
+
+    /* ==========================================================
+       七、时间索引面板开关
+       ========================================================== */
+    const indexOverlay = document.getElementById('indexOverlay');
+    const indexPanel = document.getElementById('indexPanel');
+    function openIndex() { indexOverlay.classList.add('active'); indexPanel.classList.add('active'); }
+    function closeIndex() { indexOverlay.classList.remove('active'); indexPanel.classList.remove('active'); }
+    document.getElementById('indexBtn').addEventListener('click', openIndex);
+    document.getElementById('indexCloseBtn').addEventListener('click', closeIndex);
+    indexOverlay.addEventListener('click', closeIndex);
+
+    /* ==========================================================
+       八、新增珠子
+       ========================================================== */
+    document.getElementById('addBeadBtn').addEventListener('click', () => {
+      const today = new Date().toISOString().slice(0,10);
+      const bead = {
+        id: nextId++, title: '新的珠子', date: today,
+        materialKey: 'pearl', tint: null,
+        emotion: '待定义', text: '在这里写下这段时光的故事……', music: ''
+      };
+      beads.push(bead);
+      renderBeads();
+      renderIndex();
+      showDetail(bead.id);
+    });
+
+    /* ==========================================================
+       九、初始化
+       ========================================================== */
+    buildMaterialGrid();
+    renderBeads();
+    renderIndex();
+  </script>
+</body>
+</html>
