@@ -3,43 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>人生珠子</title>
+  <title>人生星河</title>
   <style>
-    /* ========== 基础重置 ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0a0a14;
+      background: #060611;
       color: #e8e8ec;
       font-family: -apple-system, "Microsoft YaHei", sans-serif;
-      overflow-x: hidden;
-      min-height: 100vh;
+      overflow: hidden;
+      height: 100vh;
     }
 
-    /* ========== 页面标题 ========== */
     .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
       text-align: center;
-      padding: 44px 20px 14px;
+      padding: 22px 20px 10px;
+      z-index: 5;
+      pointer-events: none;
     }
     .header h1 {
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 300;
-      letter-spacing: 8px;
+      letter-spacing: 10px;
       color: #e8e8ec;
+      text-shadow: 0 0 20px rgba(255, 200, 120, 0.3);
     }
     .header p {
-      font-size: 12px;
-      color: #555566;
-      margin-top: 10px;
-      letter-spacing: 2px;
+      font-size: 11px;
+      color: #665544;
+      margin-top: 8px;
+      letter-spacing: 3px;
     }
 
-    /* ========== 顶部工具栏 ========== */
     .toolbar {
+      position: fixed;
+      top: 64px; left: 0; right: 0;
       display: flex;
       justify-content: center;
-      gap: 12px;
-      padding: 0 20px 8px;
+      gap: 10px;
+      padding: 0 20px;
+      z-index: 5;
     }
     .tool-btn {
       background: rgba(255,255,255,0.04);
@@ -51,82 +56,70 @@
       cursor: pointer;
       letter-spacing: 1px;
       transition: all 0.25s;
+      backdrop-filter: blur(8px);
     }
     .tool-btn:hover {
-      background: rgba(255,255,255,0.09);
+      background: rgba(255,200,120,0.1);
       color: #e8e8ec;
-      border-color: rgba(255,255,255,0.18);
+      border-color: rgba(255,200,120,0.25);
+    }
+    .tool-btn.focus-active {
+      background: rgba(255,200,120,0.15);
+      color: #ffcc88;
+      border-color: rgba(255,200,120,0.4);
     }
 
-    /* ========== 时间线容器 ========== */
-    .timeline-container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 10px 20px 20px;
+    /* 银河系 Canvas */
+    .galaxy-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
     }
-    .timeline-svg {
+    #galaxyCanvas {
       width: 100%;
-      height: 520px;
+      height: 100%;
       display: block;
+      cursor: grab;
     }
-    /* 时间线曲线 —— 淡淡的虚线，像一串隐约的丝线 */
-    .timeline-path {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.07);
-      stroke-width: 2;
-      stroke-dasharray: 4 8;
-    }
+    #galaxyCanvas:active { cursor: grabbing; }
 
-    /* ========== 珠子交互 ==========
-       关键修复：用嵌套双层 g 分离定位与缩放。
-       外层 .bead-group 只管 translate（贴曲线），不参与 CSS transform。
-       内层 .bead-inner 管 scale（hover 放大），不会覆盖外层 translate。 */
-    .bead-group {
-      cursor: pointer;
-    }
-    .bead-inner {
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      transform-origin: 0 0;
-    }
-    .bead-group:hover .bead-inner {
-      transform: scale(1.22);
-    }
-    .bead-group.highlight .bead-inner {
-      transform: scale(1.3);
-    }
-    /* 珠子标题标签 —— 默认隐藏，hover 浮现 */
-    .bead-title-label {
+    /* hover 标签 */
+    .hover-label {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(10, 10, 20, 0.85);
+      border: 1px solid rgba(255, 200, 120, 0.2);
+      border-radius: 8px;
+      padding: 6px 14px;
       font-size: 12px;
-      fill: #bbbccc;
-      text-anchor: middle;
+      color: #e8e8ec;
+      white-space: nowrap;
+      z-index: 6;
       opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
+      transition: opacity 0.15s;
+      backdrop-filter: blur(6px);
     }
-    .bead-group:hover .bead-title-label,
-    .bead-group.highlight .bead-title-label {
-      opacity: 1;
-    }
-    /* 珠子时间标签 —— 常驻显示完整日期 */
-    .bead-time-label {
-      font-size: 9px;
-      fill: #777888;
-      text-anchor: middle;
-      pointer-events: none;
-      letter-spacing: 0.3px;
+    .hover-label.show { opacity: 1; }
+    .hover-label .hover-date {
+      font-size: 10px;
+      color: #887766;
+      margin-top: 2px;
+      font-family: monospace;
     }
 
-    /* ========== 底部提示 ========== */
     .hint {
+      position: fixed;
+      bottom: 16px; left: 0; right: 0;
       text-align: center;
-      padding: 8px;
       font-size: 11px;
       color: #444455;
       letter-spacing: 1px;
+      z-index: 5;
+      pointer-events: none;
     }
 
-    /* ========== 时间索引面板（左侧滑出） ========== */
+    /* 时间索引面板 */
     .index-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -136,10 +129,7 @@
       transition: opacity 0.4s;
       z-index: 10;
     }
-    .index-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .index-overlay.active { opacity: 1; pointer-events: auto; }
     .index-panel {
       position: fixed;
       top: 0; left: 0;
@@ -154,9 +144,7 @@
       overflow-y: auto;
       padding: 28px 24px;
     }
-    .index-panel.active {
-      transform: translateX(0);
-    }
+    .index-panel.active { transform: translateX(0); }
     .index-close {
       position: absolute;
       top: 18px; right: 18px;
@@ -170,467 +158,172 @@
       transition: all 0.25s;
     }
     .index-close:hover { border-color: rgba(255,255,255,0.3); color: #e8e8ec; }
-    .index-title {
-      font-size: 16px;
-      font-weight: 400;
-      letter-spacing: 4px;
-      margin-bottom: 6px;
-    }
-    .index-sub {
-      font-size: 11px;
-      color: #555566;
-      letter-spacing: 1px;
-      margin-bottom: 22px;
-    }
+    .index-title { font-size: 16px; font-weight: 400; letter-spacing: 4px; margin-bottom: 6px; }
+    .index-sub { font-size: 11px; color: #555566; letter-spacing: 1px; margin-bottom: 22px; }
     .index-year {
-      font-size: 13px;
-      color: #9999aa;
-      letter-spacing: 2px;
-      padding: 14px 0 8px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      cursor: pointer;
+      font-size: 13px; color: #9999aa; letter-spacing: 2px;
+      padding: 14px 0 8px; border-top: 1px solid rgba(255,255,255,0.06); cursor: pointer;
       transition: color 0.2s;
     }
     .index-year:hover { color: #ccccee; }
     .index-year:first-of-type { border-top: none; }
-    .index-year .year-count {
-      font-size: 10px;
-      color: #555566;
-      margin-left: 6px;
-    }
+    .index-year .year-count { font-size: 10px; color: #555566; margin-left: 6px; }
     .index-month {
-      font-size: 11px;
-      color: #666677;
-      margin: 10px 0 4px 6px;
-      letter-spacing: 1px;
-      cursor: pointer;
+      font-size: 11px; color: #666677; margin: 10px 0 4px 6px; letter-spacing: 1px; cursor: pointer;
     }
     .index-month:hover { color: #aaaabb; }
     .index-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 8px 7px 6px;
-      margin-left: 6px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 8px 7px 6px; margin-left: 6px;
+      border-radius: 8px; cursor: pointer; transition: background 0.2s;
     }
     .index-item:hover { background: rgba(255,255,255,0.05); }
-    .index-item-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .index-item-text {
-      font-size: 12px;
-      color: #bbbccc;
-    }
-    .index-item-date {
-      font-size: 10px;
-      color: #555566;
-      margin-left: auto;
-      font-family: monospace;
-    }
+    .index-item-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+    .index-item-text { font-size: 12px; color: #bbbccc; }
+    .index-item-date { font-size: 10px; color: #555566; margin-left: auto; font-family: monospace; }
 
-    /* ========== 详情面板（右侧滑出） ========== */
+    /* 详情面板 */
     .detail-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(5, 5, 12, 0.6);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s;
-      z-index: 30;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 5, 12, 0.6); opacity: 0; pointer-events: none;
+      transition: opacity 0.4s; z-index: 30;
     }
-    .detail-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .detail-overlay.active { opacity: 1; pointer-events: auto; }
     .detail-panel {
-      position: fixed;
-      top: 0; right: 0;
-      width: 480px;
-      max-width: 92vw;
-      height: 100vh;
+      position: fixed; top: 0; right: 0;
+      width: 480px; max-width: 92vw; height: 100vh;
       background: #12121f;
       border-left: 1px solid rgba(255,255,255,0.08);
       transform: translateX(100%);
       transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-      z-index: 40;
-      overflow-y: auto;
-      padding: 32px 34px;
+      z-index: 40; overflow-y: auto; padding: 32px 34px;
     }
-    .detail-panel.active {
-      transform: translateX(0);
-    }
+    .detail-panel.active { transform: translateX(0); }
     .detail-close {
-      position: absolute;
-      top: 20px; right: 24px;
+      position: absolute; top: 20px; right: 24px;
       width: 36px; height: 36px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 50%;
-      background: transparent;
-      color: #888899;
-      font-size: 18px;
-      cursor: pointer;
-      transition: all 0.25s;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 50%;
+      background: transparent; color: #888899; font-size: 18px;
+      cursor: pointer; transition: all 0.25s;
     }
     .detail-close:hover { border-color: rgba(255,255,255,0.3); color: #e8e8ec; }
     .detail-bead-preview {
-      width: 64px; height: 64px;
-      border-radius: 50%;
-      margin-bottom: 18px;
+      width: 64px; height: 64px; border-radius: 50%; margin-bottom: 18px;
+      box-shadow: 0 0 24px rgba(255, 200, 120, 0.2);
     }
-    .detail-title {
-      font-size: 22px;
-      font-weight: 400;
-      margin-bottom: 6px;
-    }
-    .detail-meta {
-      font-size: 12px;
-      color: #666677;
-      margin-bottom: 22px;
-      letter-spacing: 1px;
-    }
-    .detail-tags {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 22px;
-    }
+    .detail-title { font-size: 22px; font-weight: 400; margin-bottom: 6px; }
+    .detail-meta { font-size: 12px; color: #666677; margin-bottom: 22px; letter-spacing: 1px; }
+    .detail-tags { display: flex; gap: 8px; margin-bottom: 22px; }
     .detail-tag {
-      font-size: 11px;
-      padding: 4px 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.05);
-      color: #aaaabb;
+      font-size: 11px; padding: 4px 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.05); color: #aaaabb;
     }
 
-    /* —— 编辑区 —— */
     .edit-section {
-      margin-bottom: 22px;
-      padding: 16px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.025);
-      border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 22px; padding: 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
     }
     .edit-label {
-      font-size: 11px;
-      color: #777788;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
+      font-size: 11px; color: #777788; letter-spacing: 1px;
+      margin-bottom: 10px; text-transform: uppercase;
     }
-    .edit-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
+    .edit-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .edit-row:last-child { margin-bottom: 0; }
-    .edit-row label {
-      font-size: 12px;
-      color: #9999aa;
-      min-width: 56px;
-    }
+    .edit-row label { font-size: 12px; color: #9999aa; min-width: 56px; }
     input[type="date"], input[type="text"] {
-      flex: 1;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 6px;
-      color: #ddddee;
-      font-size: 13px;
-      padding: 6px 10px;
-      font-family: inherit;
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; color: #ddddee; font-size: 13px; padding: 6px 10px; font-family: inherit;
     }
-    input[type="date"]:focus, input[type="text"]:focus {
-      outline: none;
-      border-color: rgba(255,255,255,0.25);
-    }
-    /* 材质选择器 */
-    .material-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-    }
+    input[type="date"]:focus, input[type="text"]:focus { outline: none; border-color: rgba(255,255,255,0.25); }
+    .material-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .material-option {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 2px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.07);
-      cursor: pointer;
-      transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 10px 2px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07);
+      cursor: pointer; transition: all 0.2s;
     }
     .material-option:hover { background: rgba(255,255,255,0.05); }
-    .material-option.selected {
-      border-color: rgba(255,255,255,0.35);
-      background: rgba(255,255,255,0.07);
-    }
-    .material-option-dot {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-    }
-    .material-option-name {
-      font-size: 9px;
-      color: #888899;
-    }
-    /* 调色器 */
-    .tint-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .tint-row label {
-      font-size: 11px;
-      color: #888899;
-      min-width: 50px;
-    }
+    .material-option.selected { border-color: rgba(255,200,120,0.4); background: rgba(255,200,120,0.06); }
+    .material-option-dot { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.1); }
+    .material-option-name { font-size: 9px; color: #888899; }
+    .tint-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tint-row label { font-size: 11px; color: #888899; min-width: 50px; }
     input[type="color"] {
-      width: 38px; height: 28px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 6px;
-      background: transparent;
-      cursor: pointer;
-      padding: 0;
+      width: 38px; height: 28px; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; background: transparent; cursor: pointer; padding: 0;
     }
-    .tint-hex {
-      font-size: 11px;
-      color: #666677;
-      font-family: monospace;
-    }
+    .tint-hex { font-size: 11px; color: #666677; font-family: monospace; }
 
-    .detail-photo {
-      width: 100%;
-      height: 180px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px dashed rgba(255,255,255,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #444455;
-      font-size: 12px;
-      margin-bottom: 20px;
-    }
-    .detail-text {
-      font-size: 14px;
-      line-height: 2;
-      color: #ccccee;
-      margin-bottom: 24px;
-      background: transparent;
-      border: none;
-      width: 100%;
-      resize: vertical;
-      min-height: 60px;
-      font-family: inherit;
-      outline: none;
-    }
-    .detail-music {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-    }
-    .music-play-btn {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .music-info { flex: 1; }
-    .music-title {
-      font-size: 12px;
-      color: #aaaabb;
-      margin-bottom: 4px;
-    }
-    .music-bar {
-      height: 3px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.08);
-      position: relative;
-    }
-    .music-progress {
-      width: 0%;
-      height: 100%;
-      border-radius: 2px;
-      transition: width 0.2s linear;
-    }
-
-    /* ========== 照片上传区 ========== */
     .photo-upload-zone {
-      width: 100%;
-      height: 180px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px dashed rgba(255,255,255,0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.25s;
-      overflow: hidden;
-      position: relative;
-      margin-bottom: 20px;
+      width: 100%; height: 180px; border-radius: 12px;
+      background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s; overflow: hidden; position: relative; margin-bottom: 20px;
     }
-    .photo-upload-zone:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.2);
-    }
-    .photo-upload-zone .upload-hint {
-      color: #555566;
-      font-size: 12px;
-      text-align: center;
-      line-height: 1.8;
-    }
-    .photo-upload-zone .upload-hint span {
-      font-size: 28px;
-      display: block;
-      margin-bottom: 6px;
-    }
-    .photo-upload-zone img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 12px;
-    }
+    .photo-upload-zone:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+    .photo-upload-zone .upload-hint { color: #555566; font-size: 12px; text-align: center; line-height: 1.8; }
+    .photo-upload-zone .upload-hint span { font-size: 28px; display: block; margin-bottom: 6px; }
+    .photo-upload-zone img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
     .photo-remove-btn {
-      position: absolute;
-      top: 8px; right: 8px;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.6);
-      border: none;
-      color: #ff6677;
-      font-size: 16px;
-      cursor: pointer;
-      display: none;
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(0,0,0,0.6); border: none; color: #ff6677; font-size: 16px;
+      cursor: pointer; display: none;
     }
     .photo-upload-zone.has-photo .photo-remove-btn { display: block; }
     .photo-upload-zone.has-photo .upload-hint { display: none; }
 
-    /* ========== 音乐搜索区 ========== */
-    .music-search-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
+    .detail-text {
+      font-size: 14px; line-height: 2; color: #ccccee; margin-bottom: 24px;
+      background: transparent; border: none; width: 100%; resize: vertical;
+      min-height: 60px; font-family: inherit; outline: none;
     }
+    .detail-music {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+      border-radius: 10px; background: rgba(255,255,255,0.03);
+    }
+    .music-play-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0; }
+    .music-info { flex: 1; }
+    .music-title { font-size: 12px; color: #aaaabb; margin-bottom: 4px; }
+    .music-bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,0.08); position: relative; }
+    .music-progress { width: 0%; height: 100%; border-radius: 2px; transition: width 0.2s linear; }
+
+    .music-search-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .music-search-input {
-      flex: 1;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
-      color: #ccccee;
-      font-size: 12px;
-      padding: 8px 12px;
-      outline: none;
-      font-family: inherit;
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; color: #ccccee; font-size: 12px; padding: 8px 12px; outline: none; font-family: inherit;
     }
     .music-search-input:focus { border-color: rgba(255,255,255,0.2); }
     .music-search-btn {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #aaaabb;
-      font-size: 11px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.2s;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+      color: #aaaabb; font-size: 11px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+      flex-shrink: 0; transition: all 0.2s;
     }
-    .music-search-btn:hover {
-      background: rgba(255,255,255,0.12);
-      color: #e8e8ec;
-    }
-    .music-search-results {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s;
-      margin-bottom: 4px;
-    }
-    .music-search-results.show {
-      max-height: 200px;
-      overflow-y: auto;
-    }
+    .music-search-btn:hover { background: rgba(255,255,255,0.12); color: #e8e8ec; }
+    .music-search-results { max-height: 0; overflow: hidden; transition: max-height 0.3s; margin-bottom: 4px; }
+    .music-search-results.show { max-height: 200px; overflow-y: auto; }
     .music-result-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.15s;
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border-radius: 6px; cursor: pointer; transition: background 0.15s;
     }
     .music-result-item:hover { background: rgba(255,255,255,0.06); }
-    .music-result-item .song-name {
-      font-size: 12px;
-      color: #ccccee;
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .music-result-item .song-artist {
-      font-size: 11px;
-      color: #666677;
-      flex-shrink: 0;
-    }
-    .music-url-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+    .music-result-item .song-name { font-size: 12px; color: #ccccee; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .music-result-item .song-artist { font-size: 11px; color: #666677; flex-shrink: 0; }
+    .music-url-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .music-url-input {
-      flex: 1;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px;
-      color: #ccccee;
-      font-size: 11px;
-      padding: 6px 10px;
-      outline: none;
-      font-family: monospace;
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; color: #ccccee; font-size: 11px; padding: 6px 10px; outline: none; font-family: monospace;
     }
-    .music-section-label {
-      font-size: 10px;
-      color: #555566;
-      margin-bottom: 4px;
-      letter-spacing: 1px;
-    }
+    .music-section-label { font-size: 10px; color: #555566; margin-bottom: 4px; letter-spacing: 1px; }
 
-    /* ========== 删除按钮 ========== */
     .delete-btn {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,80,100,0.15);
-      background: rgba(255,80,100,0.05);
-      color: #ff6677;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.25s;
-      font-family: inherit;
+      width: 100%; padding: 10px; margin-top: 12px; border-radius: 8px;
+      border: 1px solid rgba(255,80,100,0.15); background: rgba(255,80,100,0.05);
+      color: #ff6677; font-size: 12px; cursor: pointer; transition: all 0.25s; font-family: inherit;
     }
-    .delete-btn:hover {
-      background: rgba(255,80,100,0.12);
-      border-color: rgba(255,80,100,0.3);
-    }
+    .delete-btn:hover { background: rgba(255,80,100,0.12); border-color: rgba(255,80,100,0.3); }
 
-    /* ========== 入场动画 ========== */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .detail-panel.active > * {
-      animation: fadeInUp 0.5s ease forwards;
-    }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .detail-panel.active > * { animation: fadeInUp 0.5s ease forwards; }
     .detail-panel.active > *:nth-child(2) { animation-delay: 0.06s; }
     .detail-panel.active > *:nth-child(3) { animation-delay: 0.12s; }
     .detail-panel.active > *:nth-child(4) { animation-delay: 0.18s; }
@@ -643,14 +336,13 @@
 </head>
 <body>
 
-  <!-- 页面标题 -->
   <div class="header">
-    <h1>人 生 珠 子</h1>
-    <p>每一颗，都是时光里的闪光</p>
+    <h1>人 生 星 河</h1>
+    <p>每一颗星，都是时光里的闪光</p>
   </div>
 
-  <!-- 顶部工具栏 -->
   <div class="toolbar">
+    <button class="tool-btn" id="focusBtn">✦ 聚焦最近</button>
     <button class="tool-btn" id="indexBtn">⋰ 时间索引</button>
     <button class="tool-btn" id="addBeadBtn">＋ 新增珠子</button>
     <button class="tool-btn" id="exportBtn">⬇ 导出备份</button>
@@ -658,45 +350,13 @@
     <input type="file" id="importFile" accept=".json" style="display:none">
   </div>
 
-  <!-- 时间线 -->
-  <div class="timeline-container">
-    <svg class="timeline-svg" id="timelineSvg" viewBox="0 0 1200 520">
-      <defs id="beadDefs">
-        <!-- 高斯模糊滤镜：给高光做柔和边缘 -->
-        <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5"/>
-        </filter>
-        <!-- 珠子外发光滤镜：让珠子有微弱的光晕氛围 -->
-        <filter id="beadGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <!-- 珠子底部投影滤镜：让珠子有浮起感 -->
-        <filter id="beadDrop" x="-60%" y="-20%" width="220%" height="160%">
-          <feGaussianBlur stdDeviation="3" in="SourceAlpha"/>
-          <feOffset dx="0" dy="4" result="offsetblur"/>
-          <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
-          <feMerge>
-            <feMergeNode/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <!-- 自由曲线时间线：这条曲线就是珠子要"贴合"的丝线 -->
-      <path class="timeline-path" id="timelinePath"
-            d="M 60 330 C 220 90, 420 500, 620 190 S 920 430, 1140 210"/>
-      <!-- 珠子层：由 JS 沿曲线采样定位后动态插入 -->
-      <g id="beadsLayer"></g>
-    </svg>
+  <div class="galaxy-container">
+    <canvas id="galaxyCanvas"></canvas>
   </div>
+  <div class="hover-label" id="hoverLabel"></div>
 
-  <!-- 底部提示 -->
-  <div class="hint">点击珠子打开一段记忆 · 顶部索引可按时间查找</div>
+  <div class="hint">拖拽旋转星河 · 滚轮缩放 · 点击星点打开记忆</div>
 
-  <!-- 时间索引面板 -->
   <div class="index-overlay" id="indexOverlay"></div>
   <div class="index-panel" id="indexPanel">
     <button class="index-close" id="indexCloseBtn">&times;</button>
@@ -705,7 +365,6 @@
     <div id="indexTree"></div>
   </div>
 
-  <!-- 详情面板 -->
   <div class="detail-overlay" id="overlay"></div>
   <div class="detail-panel" id="detailPanel">
     <button class="detail-close" id="closeBtn">&times;</button>
@@ -714,7 +373,6 @@
     <div class="detail-meta" id="detailMeta"></div>
     <div class="detail-tags" id="detailTags"></div>
 
-    <!-- 编辑区：时间 / 材质 / 调色 -->
     <div class="edit-section">
       <div class="edit-label">编辑这颗珠子</div>
       <div class="edit-row">
@@ -725,9 +383,9 @@
         <label>日期</label>
         <input type="date" id="editDate">
       </div>
-      <div class="edit-label" style="margin-top:14px">材质（选择基础形态）</div>
+      <div class="edit-label" style="margin-top:14px">材质（选择颜色方案）</div>
       <div class="material-grid" id="materialGrid"></div>
-      <div class="edit-label" style="margin-top:14px">调色（覆盖材质默认色）</div>
+      <div class="edit-label" style="margin-top:14px">调色（自定义颜色）</div>
       <div class="tint-row">
         <label>高光</label>
         <input type="color" id="tintHighlight">
@@ -779,33 +437,29 @@
 
   <script>
     /* ==========================================================
-       一、珠子材质库
-       每个材质定义 render 类型 + 默认三色调板（高光/中间/暗部）。
-       render 类型决定质感层的渲染方式，调色覆盖默认色。
-       加新材质只需往这里加一条。
+       一、珠子材质库（颜色方案）
+       在银河系视图中，珠子只保留颜色 + 发光，不画材质细节。
+       材质库的作用是提供颜色方案 + 调色基础。
        ========================================================== */
     const MATERIALS = {
-      pearl:     { name: '珍珠',    render: 'pearl',    tint: { highlight: '#FFF4D6', mid: '#E8B86D', shadow: '#9A6A28' } },
-      glass:     { name: '琉璃',    render: 'glass',    tint: { highlight: '#C8F5E4', mid: '#5DCAA5', shadow: '#0F6E56' } },
-      rose:      { name: '蔷薇石',  render: 'gem',      tint: { highlight: '#FBD8E4', mid: '#ED93B1', shadow: '#993556' } },
-      amethyst:  { name: '紫水晶',  render: 'crystal',  tint: { highlight: '#DDD9F8', mid: '#AFA9EC', shadow: '#534AB7' } },
-      sapphire:  { name: '蓝宝石',  render: 'gem',      tint: { highlight: '#C5DDF4', mid: '#85B7EB', shadow: '#185FA5' } },
-      amber:     { name: '琥珀',    render: 'glass',    tint: { highlight: '#FAD4BE', mid: '#F0997B', shadow: '#993C1D' } },
-      wood:      { name: '木质',    render: 'wood',     tint: { highlight: '#D9A86C', mid: '#A06A35', shadow: '#5C3A18' } },
-      metal:     { name: '金属',    render: 'metal',    tint: { highlight: '#F0F0F5', mid: '#A8A8B8', shadow: '#4A4A5A' } },
-      obsidian:  { name: '黑曜石',  render: 'obsidian', tint: { highlight: '#5A5A6E', mid: '#2A2A38', shadow: '#0A0A14' } },
-      moonstone: { name: '月光石',  render: 'moonstone', tint: { highlight: '#EEF4FF', mid: '#C8D4F0', shadow: '#8A98C8' } },
-      jade:      { name: '玉石',    render: 'jade',     tint: { highlight: '#D4F0D8', mid: '#7AC898', shadow: '#2E7050' } }
+      pearl:     { name: '珍珠',    tint: { highlight: '#FFF4D6', mid: '#E8B86D', shadow: '#9A6A28' } },
+      glass:     { name: '琉璃',    tint: { highlight: '#C8F5E4', mid: '#5DCAA5', shadow: '#0F6E56' } },
+      rose:      { name: '蔷薇石',  tint: { highlight: '#FBD8E4', mid: '#ED93B1', shadow: '#993556' } },
+      amethyst:  { name: '紫水晶',  tint: { highlight: '#DDD9F8', mid: '#AFA9EC', shadow: '#534AB7' } },
+      sapphire:  { name: '蓝宝石',  tint: { highlight: '#C5DDF4', mid: '#85B7EB', shadow: '#185FA5' } },
+      amber:     { name: '琥珀',    tint: { highlight: '#FAD4BE', mid: '#F0997B', shadow: '#993C1D' } },
+      wood:      { name: '木质',    tint: { highlight: '#D9A86C', mid: '#A06A35', shadow: '#5C3A18' } },
+      metal:     { name: '金属',    tint: { highlight: '#F0F0F5', mid: '#A8A8B8', shadow: '#4A4A5A' } },
+      obsidian:  { name: '黑曜石',  tint: { highlight: '#7A7A8E', mid: '#3A3A48', shadow: '#1A1A24' } },
+      moonstone: { name: '月光石',  tint: { highlight: '#EEF4FF', mid: '#C8D4F0', shadow: '#8A98C8' } },
+      jade:      { name: '玉石',    tint: { highlight: '#D4F0D8', mid: '#7AC898', shadow: '#2E7050' } }
     };
 
     /* ==========================================================
        二、珠子数据 —— localStorage 持久化
-       数据存在浏览器本地，刷新/关闭都不丢。
-       可导出 JSON 文件备份，换设备时导入恢复。
        ========================================================== */
     const STORAGE_KEY = 'life_beads_data';
 
-    // 默认珠子（首次打开时用，之后存档覆盖）
     const DEFAULT_BEADS = [
       { id: 0, title: '毕业那天', date: '2023-06-15', materialKey: 'pearl', tint: null, emotion: '自由 · 释然', text: '四年终于结束了。走出校门的那一刻，风很大，心里空空的，但那种空是好的空。', music: 'Good Riddance — Green Day' },
       { id: 1, title: '独自旅行', date: '2023-12-08', materialKey: 'glass', tint: null, emotion: '自由 · 清醒', text: '一个人坐在海边看了整晚的星星。原来孤独可以这么舒服，不需要跟任何人解释自己。', music: 'Weightless — Marconi Union' },
@@ -815,470 +469,480 @@
       { id: 5, title: '此刻', date: '2025-07-25', materialKey: 'amber', tint: null, emotion: '温暖 · 进行时', text: '你正在读这段文字。这就是此刻。这颗珠子还在发光，因为故事还在继续。', music: 'Here Comes the Sun — The Beatles' }
     ];
 
-    // 从 localStorage 读取珠子数据
     function loadBeads() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const data = JSON.parse(saved);
-          if (data.beads && Array.isArray(data.beads) && data.beads.length > 0) {
-            return data.beads;
-          }
+          if (data.beads && Array.isArray(data.beads) && data.beads.length > 0) return data.beads;
         }
       } catch (e) { console.warn('读取存档失败，使用默认数据', e); }
       return DEFAULT_BEADS.map(b => ({ ...b, tint: b.tint ? { ...b.tint } : null }));
     }
 
-    // 保存珠子数据到 localStorage
     function saveBeads() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ beads: beads, nextId: nextId }));
-      } catch (e) { console.warn('保存失败', e); }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ beads: beads, nextId: nextId })); }
+      catch (e) { console.warn('保存失败', e); }
     }
 
     let beads = loadBeads();
     let nextId = beads.length > 0 ? Math.max(...beads.map(b => b.id)) + 1 : 0;
 
     /* ==========================================================
-       三、核心渲染
-       关键修复：嵌套双层 g —— 外层 translate 贴曲线，内层 scale 做 hover。
-       这样 CSS transform: scale 不会覆盖 SVG transform: translate。
-       珠子位置用 path.getPointAtLength() 精确取曲线坐标。
+       三、工具函数
        ========================================================== */
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const path = document.getElementById('timelinePath');
-    const beadsLayer = document.getElementById('beadsLayer');
-    const defs = document.getElementById('beadDefs');
+    function sortedBeads() { return [...beads].sort((a, b) => new Date(a.date) - new Date(b.date)); }
 
-    // 按日期升序排序
-    function sortedBeads() {
-      return [...beads].sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-
-    // #RRGGBB → "r,g,b"
     function hexToRgbTriplet(hex) {
       const h = hex.replace('#', '');
       return parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16);
     }
 
-    // 完整日期：2023.06.15
+    function hexToRgba(hex, alpha) {
+      const h = hex.replace('#', '');
+      return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + alpha + ')';
+    }
+
     function compactDate(iso) {
       const d = new Date(iso);
       return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
     }
-    // 简短中文：6月15日
-    function shortDate(iso) {
-      const d = new Date(iso);
-      return (d.getMonth()+1) + '月' + d.getDate() + '日';
-    }
-    // 完整中文：2023 年 6 月 15 日
     function fullDate(iso) {
       const d = new Date(iso);
       return d.getFullYear() + ' 年 ' + (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日';
     }
 
-    // 为珠子生成 SVG 径向渐变（放进 defs）
-    function ensureGradient(bead) {
-      const mat = MATERIALS[bead.materialKey];
-      const tint = bead.tint || mat.tint;
-      const gid = 'grad_' + bead.id;
-      if (document.getElementById(gid)) return gid;
-      const def = document.createElementNS(svgNS, 'radialGradient');
-      def.setAttribute('id', gid);
-      def.setAttribute('cx', '35%');
-      def.setAttribute('cy', '30%');
-      def.setAttribute('r', '70%');
-      [[0, tint.highlight], [42, tint.mid], [100, tint.shadow]].forEach(([off, col]) => {
-        const s = document.createElementNS(svgNS, 'stop');
-        s.setAttribute('offset', off + '%');
-        s.setAttribute('stop-color', col);
-        def.appendChild(s);
-      });
-      defs.appendChild(def);
-      return gid;
-    }
-
     /* ==========================================================
-       四、材质质感层（大幅增强）
-       每种材质用不同的 SVG 图层组合，追求视觉差异明显。
+       四、银河系 Canvas 渲染引擎
+       —— 深空背景 + 暖金橙星云 + 螺旋臂尘埃 + 中心核 + 发光恒星（珠子）
        ========================================================== */
-    function buildTextureLayers(bead, r) {
-      const mat = MATERIALS[bead.materialKey];
-      const tint = bead.tint || mat.tint;
-      const layers = [];
-      const ox = -r * 0.28, oy = -r * 0.32; // 高光偏左上
+    const canvas = document.getElementById('galaxyCanvas');
+    const ctx = canvas.getContext('2d');
+    const hoverLabel = document.getElementById('hoverLabel');
 
-      if (mat.render === 'pearl') {
-        // —— 珍珠：多层高光 + 虹彩晕环 + 外发光 ——
-        // 外发光晕
-        const glow = document.createElementNS(svgNS, 'circle');
-        glow.setAttribute('r', r + 4);
-        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.12)');
-        glow.setAttribute('filter', 'url(#beadGlow)');
-        layers.push(glow);
-        // 大柔和高光
-        const hl1 = document.createElementNS(svgNS, 'circle');
-        hl1.setAttribute('cx', ox); hl1.setAttribute('cy', oy);
-        hl1.setAttribute('r', r * 0.5);
-        hl1.setAttribute('fill', 'rgba(255,255,255,0.5)');
-        hl1.setAttribute('filter', 'url(#softBlur)');
-        layers.push(hl1);
-        // 锐利小高光
-        const hl2 = document.createElementNS(svgNS, 'circle');
-        hl2.setAttribute('cx', ox * 1.1); hl2.setAttribute('cy', oy * 1.1);
-        hl2.setAttribute('r', r * 0.18);
-        hl2.setAttribute('fill', 'rgba(255,255,255,0.85)');
-        layers.push(hl2);
-        // 虹彩边缘环
-        const ring = document.createElementNS(svgNS, 'circle');
-        ring.setAttribute('r', r - 1);
-        ring.setAttribute('fill', 'none');
-        ring.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
-        ring.setAttribute('stroke-width', '1.5');
-        layers.push(ring);
-        // 底部反光
-        const bl = document.createElementNS(svgNS, 'ellipse');
-        bl.setAttribute('rx', r * 0.4); bl.setAttribute('ry', r * 0.12);
-        bl.setAttribute('cy', r * 0.5);
-        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.25)');
-        bl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(bl);
+    let cw = 0, ch = 0;
+    let galaxyRotation = 0;           // 银河系旋转角度
+    let autoRotateSpeed = 0.0004;     // 自动旋转速度
+    let isAutoRotating = true;        // 是否自动旋转
+    let viewScale = 1;                // 视图缩放
+    let targetScale = 1;              // 目标缩放（用于平滑过渡）
+    let viewOffsetX = 0, viewOffsetY = 0;
+    let targetOffsetX = 0, targetOffsetY = 0;
 
-      } else if (mat.render === 'glass') {
-        // —— 琉璃/玻璃：通透 + 锐利边缘 + 气泡 ——
-        // 边缘亮线（强）
-        const edge = document.createElementNS(svgNS, 'circle');
-        edge.setAttribute('r', r);
-        edge.setAttribute('fill', 'none');
-        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.55)');
-        edge.setAttribute('stroke-width', '1.5');
-        layers.push(edge);
-        // 内边缘暗线（增加通透感）
-        const edgeDark = document.createElementNS(svgNS, 'circle');
-        edgeDark.setAttribute('r', r - 2);
-        edgeDark.setAttribute('fill', 'none');
-        edgeDark.setAttribute('stroke', 'rgba(0,0,0,0.15)');
-        edgeDark.setAttribute('stroke-width', '1');
-        layers.push(edgeDark);
-        // 大高光（半圆弧形）
-        const hl = document.createElementNS(svgNS, 'path');
-        hl.setAttribute('d', 'M ' + (ox - r*0.15) + ' ' + (oy - r*0.1) + ' A ' + (r*0.5) + ' ' + (r*0.5) + ' 0 0 1 ' + (ox + r*0.25) + ' ' + (oy + r*0.3));
-        hl.setAttribute('fill', 'none');
-        hl.setAttribute('stroke', 'rgba(255,255,255,0.7)');
-        hl.setAttribute('stroke-width', '2');
-        hl.setAttribute('stroke-linecap', 'round');
-        layers.push(hl);
-        // 锐利点高光
-        const dot = document.createElementNS(svgNS, 'circle');
-        dot.setAttribute('cx', ox * 1.2); dot.setAttribute('cy', oy * 1.2);
-        dot.setAttribute('r', r * 0.1);
-        dot.setAttribute('fill', 'rgba(255,255,255,0.9)');
-        layers.push(dot);
-        // 气泡
-        const bub = document.createElementNS(svgNS, 'circle');
-        bub.setAttribute('cx', r * 0.2); bub.setAttribute('cy', r * 0.25);
-        bub.setAttribute('r', r * 0.1);
-        bub.setAttribute('fill', 'rgba(255,255,255,0.4)');
-        layers.push(bub);
-        // 底部反光
-        const bl = document.createElementNS(svgNS, 'ellipse');
-        bl.setAttribute('rx', r * 0.45); bl.setAttribute('ry', r * 0.1);
-        bl.setAttribute('cy', r * 0.5);
-        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
-        bl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(bl);
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let hoveredBeadId = null;
+    let highlightedBeadId = null;
+    let highlightTimer = null;
+    let isFocused = false;            // 是否在聚焦模式
 
-      } else if (mat.render === 'gem') {
-        // —— 刻面宝石：三角形刻面，每面明度不同 ——
-        const pts = [
-          [0, -r], [r*0.87, -r*0.5], [r*0.87, r*0.5], [0, r], [-r*0.87, r*0.5], [-r*0.87, -r*0.5]
-        ];
-        const shades = [
-          'rgba(255,255,255,0.6)',
-          'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.55)',
-          'rgba(' + hexToRgbTriplet(tint.mid) + ',0.35)',
-          'rgba(0,0,0,0.22)',
-          'rgba(' + hexToRgbTriplet(tint.mid) + ',0.3)',
-          'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.4)'
-        ];
-        for (let i = 0; i < 6; i++) {
-          const a = pts[i], b = pts[(i+1)%6];
-          const poly = document.createElementNS(svgNS, 'polygon');
-          poly.setAttribute('points', '0,0 ' + a[0] + ',' + a[1] + ' ' + b[0] + ',' + b[1]);
-          poly.setAttribute('fill', shades[i]);
-          poly.setAttribute('opacity', '0.65');
-          layers.push(poly);
-        }
-        // 顶部强高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.22);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.8)');
-        layers.push(hl);
-        // 刻面线
-        for (let i = 0; i < 6; i++) {
-          const ln = document.createElementNS(svgNS, 'line');
-          ln.setAttribute('x1', 0); ln.setAttribute('y1', 0);
-          ln.setAttribute('x2', pts[i][0]); ln.setAttribute('y2', pts[i][1]);
-          ln.setAttribute('stroke', 'rgba(255,255,255,0.15)');
-          ln.setAttribute('stroke-width', '0.5');
-          layers.push(ln);
-        }
+    let backgroundStars = [];
+    let nebulaParticles = [];
+    let spiralDust = [];
 
-      } else if (mat.render === 'crystal') {
-        // —— 水晶：内部放射光芒 + 通透高光 + 微发光 ——
-        // 外发光
-        const glow = document.createElementNS(svgNS, 'circle');
-        glow.setAttribute('r', r + 3);
-        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.1)');
-        glow.setAttribute('filter', 'url(#beadGlow)');
-        layers.push(glow);
-        // 放射光芒线
-        for (let i = 0; i < 8; i++) {
-          const ang = (Math.PI / 4) * i;
-          const ln = document.createElementNS(svgNS, 'line');
-          ln.setAttribute('x1', 0); ln.setAttribute('y1', 0);
-          ln.setAttribute('x2', Math.cos(ang) * r * 0.85);
-          ln.setAttribute('y2', Math.sin(ang) * r * 0.85);
-          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.35)');
-          ln.setAttribute('stroke-width', '0.8');
-          layers.push(ln);
-        }
-        // 高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.3);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.75)');
-        hl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(hl);
-        // 锐利高光点
-        const dot = document.createElementNS(svgNS, 'circle');
-        dot.setAttribute('cx', ox * 1.2); dot.setAttribute('cy', oy * 1.2);
-        dot.setAttribute('r', r * 0.08);
-        dot.setAttribute('fill', 'rgba(255,255,255,0.95)');
-        layers.push(dot);
+    // 调整 Canvas 尺寸（支持高 DPI）
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw * dpr;
+      canvas.height = ch * dpr;
+      canvas.style.width = cw + 'px';
+      canvas.style.height = ch + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
-      } else if (mat.render === 'wood') {
-        // —— 木质：年轮纹理 + 哑光表面 ——
-        // 年轮线
-        for (let i = 1; i <= 3; i++) {
-          const ring = document.createElementNS(svgNS, 'ellipse');
-          ring.setAttribute('rx', r * (0.35 + i*0.18));
-          ring.setAttribute('ry', r * (0.28 + i*0.14));
-          ring.setAttribute('fill', 'none');
-          ring.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.4)');
-          ring.setAttribute('stroke-width', '0.8');
-          ring.setAttribute('transform', 'rotate(-12)');
-          layers.push(ring);
-        }
-        // 哑光高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.35);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.2)');
-        hl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(hl);
-        // 木纹细线
-        for (let i = 0; i < 3; i++) {
-          const ln = document.createElementNS(svgNS, 'path');
-          const yo = -r * 0.3 + i * r * 0.3;
-          ln.setAttribute('d', 'M ' + (-r*0.7) + ' ' + yo + ' Q 0 ' + (yo + r*0.1) + ' ' + (r*0.7) + ' ' + yo);
-          ln.setAttribute('fill', 'none');
-          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.2)');
-          ln.setAttribute('stroke-width', '0.5');
-          layers.push(ln);
-        }
-
-      } else if (mat.render === 'metal') {
-        // —— 金属：强对比反光带 + 暗部 ——
-        // 顶部强反光带
-        const band = document.createElementNS(svgNS, 'ellipse');
-        band.setAttribute('rx', r * 0.75); band.setAttribute('ry', r * 0.2);
-        band.setAttribute('cy', -r * 0.4);
-        band.setAttribute('fill', 'rgba(255,255,255,0.9)');
-        layers.push(band);
-        // 中间过渡带
-        const band2 = document.createElementNS(svgNS, 'ellipse');
-        band2.setAttribute('rx', r * 0.8); band2.setAttribute('ry', r * 0.15);
-        band2.setAttribute('cy', -r * 0.1);
-        band2.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.4)');
-        layers.push(band2);
-        // 底部暗带
-        const band3 = document.createElementNS(svgNS, 'ellipse');
-        band3.setAttribute('rx', r * 0.85); band3.setAttribute('ry', r * 0.12);
-        band3.setAttribute('cy', r * 0.45);
-        band3.setAttribute('fill', 'rgba(0,0,0,0.3)');
-        layers.push(band3);
-        // 边缘亮线
-        const edge = document.createElementNS(svgNS, 'circle');
-        edge.setAttribute('r', r);
-        edge.setAttribute('fill', 'none');
-        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.5)');
-        edge.setAttribute('stroke-width', '0.8');
-        layers.push(edge);
-
-      } else if (mat.render === 'obsidian') {
-        // —— 黑曜石：深邃 + 银色裂痕 + 玻璃光泽 ——
-        // 边缘亮线
-        const edge = document.createElementNS(svgNS, 'circle');
-        edge.setAttribute('r', r);
-        edge.setAttribute('fill', 'none');
-        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.6)');
-        edge.setAttribute('stroke-width', '1.2');
-        layers.push(edge);
-        // 银色裂痕
-        for (let i = 0; i < 3; i++) {
-          const ln = document.createElementNS(svgNS, 'path');
-          const a = (Math.PI * 2 / 3) * i + 0.5;
-          const x1 = Math.cos(a) * r * 0.3;
-          const y1 = Math.sin(a) * r * 0.3;
-          const x2 = Math.cos(a + 0.8) * r * 0.7;
-          const y2 = Math.sin(a + 0.8) * r * 0.7;
-          ln.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + (x1+x2)/2 * 1.1 + ' ' + (y1+y2)/2*0.9 + ' L ' + x2 + ' ' + y2);
-          ln.setAttribute('fill', 'none');
-          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.5)');
-          ln.setAttribute('stroke-width', '0.6');
-          ln.setAttribute('opacity', '0.7');
-          layers.push(ln);
-        }
-        // 锐利高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.25);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.6)');
-        layers.push(hl);
-        // 底部反光
-        const bl = document.createElementNS(svgNS, 'ellipse');
-        bl.setAttribute('rx', r * 0.4); bl.setAttribute('ry', r * 0.08);
-        bl.setAttribute('cy', r * 0.5);
-        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.2)');
-        layers.push(bl);
-
-      } else if (mat.render === 'moonstone') {
-        // —— 月光石：乳白 + 蓝白光晕 + 柔和虹彩 ——
-        // 外发光
-        const glow = document.createElementNS(svgNS, 'circle');
-        glow.setAttribute('r', r + 5);
-        glow.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.15)');
-        glow.setAttribute('filter', 'url(#beadGlow)');
-        layers.push(glow);
-        // 大柔和高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.45);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.6)');
-        hl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(hl);
-        // 虹彩光晕（蓝白色）
-        const iris = document.createElementNS(svgNS, 'circle');
-        iris.setAttribute('r', r * 0.6);
-        iris.setAttribute('fill', 'none');
-        iris.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.mid) + ',0.2)');
-        iris.setAttribute('stroke-width', '3');
-        iris.setAttribute('filter', 'url(#softBlur)');
-        layers.push(iris);
-        // 锐利点高光
-        const dot = document.createElementNS(svgNS, 'circle');
-        dot.setAttribute('cx', ox * 1.1); dot.setAttribute('cy', oy * 1.1);
-        dot.setAttribute('r', r * 0.12);
-        dot.setAttribute('fill', 'rgba(255,255,255,0.9)');
-        layers.push(dot);
-
-      } else if (mat.render === 'jade') {
-        // —— 玉石：温润油润 + 柔和高光 ——
-        // 油润高光
-        const hl = document.createElementNS(svgNS, 'circle');
-        hl.setAttribute('cx', ox); hl.setAttribute('cy', oy);
-        hl.setAttribute('r', r * 0.4);
-        hl.setAttribute('fill', 'rgba(255,255,255,0.45)');
-        hl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(hl);
-        // 内部絮状纹理
-        for (let i = 0; i < 3; i++) {
-          const ln = document.createElementNS(svgNS, 'path');
-          const yo = -r * 0.2 + i * r * 0.2;
-          ln.setAttribute('d', 'M ' + (-r*0.6) + ' ' + yo + ' Q ' + (-r*0.2) + ' ' + (yo + r*0.15) + ' ' + (r*0.5) + ' ' + yo);
-          ln.setAttribute('fill', 'none');
-          ln.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.shadow) + ',0.15)');
-          ln.setAttribute('stroke-width', '1');
-          ln.setAttribute('filter', 'url(#softBlur)');
-          layers.push(ln);
-        }
-        // 底部油润反光
-        const bl = document.createElementNS(svgNS, 'ellipse');
-        bl.setAttribute('rx', r * 0.5); bl.setAttribute('ry', r * 0.15);
-        bl.setAttribute('cy', r * 0.45);
-        bl.setAttribute('fill', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.3)');
-        bl.setAttribute('filter', 'url(#softBlur)');
-        layers.push(bl);
-        // 边缘柔和光
-        const edge = document.createElementNS(svgNS, 'circle');
-        edge.setAttribute('r', r - 0.5);
-        edge.setAttribute('fill', 'none');
-        edge.setAttribute('stroke', 'rgba(' + hexToRgbTriplet(tint.highlight) + ',0.25)');
-        edge.setAttribute('stroke-width', '1');
-        layers.push(edge);
+    // 生成背景星（不跟随银河系旋转，增加深度感）
+    function generateBackgroundStars() {
+      backgroundStars = [];
+      const count = 350;
+      for (let i = 0; i < count; i++) {
+        backgroundStars.push({
+          x: (Math.random() - 0.5) * 2000,
+          y: (Math.random() - 0.5) * 2000,
+          r: Math.random() * 1.2 + 0.2,
+          brightness: Math.random() * 0.5 + 0.2,
+          twinkle: Math.random() * Math.PI * 2,
+          twinkleSpeed: Math.random() * 0.02 + 0.005
+        });
       }
-      return layers;
     }
 
-    // 主渲染：清空重画所有珠子
-    function renderBeads() {
-      beadsLayer.innerHTML = '';
-      const list = sortedBeads();
-      const total = path.getTotalLength();
-      const n = list.length;
-      list.forEach((bead, i) => {
-        const t = n === 1 ? 0.5 : i / (n - 1);
-        const pt = path.getPointAtLength(t * total);
-        const x = pt.x, y = pt.y;
-        const r = 24 + (i % 3) * 5; // 24~34px，材质细节更清晰
+    // 生成星云（暖金橙色径向渐变云团）
+    function generateNebula() {
+      nebulaParticles = [];
+      const count = 50;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 280 + 60;
+        nebulaParticles.push({
+          x: Math.cos(angle) * dist,
+          y: Math.sin(angle) * dist,
+          r: Math.random() * 100 + 50,
+          // 暖金橙色：hue 20-45
+          hue: 20 + Math.random() * 25,
+          sat: 70 + Math.random() * 20,
+          lit: 55 + Math.random() * 15,
+          alpha: Math.random() * 0.12 + 0.04
+        });
+      }
+    }
 
-        const gid = ensureGradient(bead);
+    // 生成螺旋臂尘埃（沿 2 条螺旋臂分布的小金橙点）
+    function generateSpiralDust() {
+      spiralDust = [];
+      const numArms = 2;
+      const particlesPerArm = 250;
+      for (let arm = 0; arm < numArms; arm++) {
+        const armOffset = (Math.PI * 2 / numArms) * arm;
+        for (let i = 0; i < particlesPerArm; i++) {
+          const t = i / particlesPerArm;
+          const angle = armOffset + t * Math.PI * 3.2;
+          const dist = 50 + t * 380;
+          const spread = (Math.random() - 0.5) * 35;
+          spiralDust.push({
+            angle: angle,
+            dist: dist + spread,
+            r: Math.random() * 1.4 + 0.3,
+            brightness: Math.random() * 0.6 + 0.2,
+            hue: 25 + Math.random() * 20
+          });
+        }
+      }
+    }
 
-        // 外层 g：只管 translate（贴曲线定位）
-        const g = document.createElementNS(svgNS, 'g');
-        g.setAttribute('class', 'bead-group');
-        g.setAttribute('transform', 'translate(' + x + ',' + y + ')');
-        g.dataset.id = bead.id;
-        g.setAttribute('filter', 'url(#beadDrop)');
+    // 计算珠子在银河系中的位置（沿螺旋臂按时间分布）
+    // 时间越早 → 越靠近中心；时间越晚 → 越靠外
+    function getBeadPosition(bead) {
+      const sorted = sortedBeads();
+      const index = sorted.findIndex(b => b.id === bead.id);
+      const total = sorted.length;
+      const t = total === 1 ? 0.25 : index / (total - 1);
 
-        // 内层 g：管 scale（hover 缩放），不碰 translate
-        const gInner = document.createElementNS(svgNS, 'g');
-        gInner.setAttribute('class', 'bead-inner');
+      // 沿螺旋臂分布：角度和距离都随时间增长
+      const angle = t * Math.PI * 2.8;
+      const dist = 70 + t * 340;
 
-        // 珠子本体
-        const body = document.createElementNS(svgNS, 'circle');
-        body.setAttribute('r', r);
-        body.setAttribute('fill', 'url(#' + gid + ')');
-        gInner.appendChild(body);
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        angle: angle,
+        dist: dist
+      };
+    }
 
-        // 质感层
-        buildTextureLayers(bead, r).forEach(l => gInner.appendChild(l));
+    // 渲染一帧银河系
+    function renderGalaxy() {
+      // 背景：深空底色
+      ctx.fillStyle = '#060611';
+      ctx.fillRect(0, 0, cw, ch);
 
-        g.appendChild(gInner);
+      const cx = cw / 2;
+      const cy = ch / 2;
 
-        // 时间标签（外层，不缩放，常驻显示完整日期）
-        const timeLabel = document.createElementNS(svgNS, 'text');
-        timeLabel.setAttribute('class', 'bead-time-label');
-        timeLabel.setAttribute('y', r + 18);
-        timeLabel.textContent = compactDate(bead.date);
-        g.appendChild(timeLabel);
-
-        // 标题标签（外层，hover 显示）
-        const titleLabel = document.createElementNS(svgNS, 'text');
-        titleLabel.setAttribute('class', 'bead-title-label');
-        titleLabel.setAttribute('y', -r - 10);
-        titleLabel.textContent = bead.title;
-        g.appendChild(titleLabel);
-
-        g.addEventListener('click', () => showDetail(bead.id));
-        beadsLayer.appendChild(g);
+      // —— 背景星（不跟随银河系旋转，固定在屏幕上） ——
+      backgroundStars.forEach(s => {
+        s.twinkle += s.twinkleSpeed;
+        const brightness = s.brightness * (0.6 + Math.sin(s.twinkle) * 0.4);
+        ctx.fillStyle = 'rgba(200, 200, 220, ' + brightness + ')';
+        ctx.beginPath();
+        ctx.arc(cx + s.x * 0.5, cy + s.y * 0.5, s.r, 0, Math.PI * 2);
+        ctx.fill();
       });
+
+      // —— 银河系（跟随旋转和缩放） ——
+      ctx.save();
+      ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
+      ctx.scale(viewScale, viewScale);
+      ctx.rotate(galaxyRotation);
+
+      // 星云
+      nebulaParticles.forEach(n => {
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + n.alpha + ')');
+        grad.addColorStop(1, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 螺旋臂尘埃
+      spiralDust.forEach(d => {
+        const x = Math.cos(d.angle) * d.dist;
+        const y = Math.sin(d.angle) * d.dist;
+        ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
+        ctx.beginPath();
+        ctx.arc(x, y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 中心核（明亮金白色）
+      const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 90);
+      coreGrad.addColorStop(0, 'rgba(255, 245, 220, 0.9)');
+      coreGrad.addColorStop(0.25, 'rgba(255, 210, 140, 0.6)');
+      coreGrad.addColorStop(0.55, 'rgba(220, 160, 80, 0.25)');
+      coreGrad.addColorStop(1, 'rgba(120, 80, 40, 0)');
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, 90, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 珠子（发光恒星）
+      const sorted = sortedBeads();
+      sorted.forEach((bead) => {
+        const pos = getBeadPosition(bead);
+        const mat = MATERIALS[bead.materialKey];
+        const tint = bead.tint || mat.tint;
+        const color = tint.mid;
+        const baseR = 7 + (sorted.indexOf(bead) % 3) * 2; // 7-11px
+
+        const isHovered = bead.id === hoveredBeadId;
+        const isHighlighted = bead.id === highlightedBeadId;
+        const beadR = isHovered || isHighlighted ? baseR * 1.5 : baseR;
+        const glowR = isHovered || isHighlighted ? beadR * 6 : beadR * 3.5;
+
+        // 外层光晕
+        const glowGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, glowR);
+        glowGrad.addColorStop(0, hexToRgba(color, 0.7));
+        glowGrad.addColorStop(0.3, hexToRgba(color, 0.25));
+        glowGrad.addColorStop(1, hexToRgba(color, 0));
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 珠子本体（径向渐变模拟立体感）
+        const beadGrad = ctx.createRadialGradient(
+          pos.x - beadR * 0.3, pos.y - beadR * 0.3, 0,
+          pos.x, pos.y, beadR
+        );
+        beadGrad.addColorStop(0, tint.highlight);
+        beadGrad.addColorStop(0.5, tint.mid);
+        beadGrad.addColorStop(1, tint.shadow);
+        ctx.fillStyle = beadGrad;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, beadR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 高光小点
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        ctx.arc(pos.x - beadR * 0.35, pos.y - beadR * 0.35, beadR * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 存储位置用于 hit detection
+        bead._galaxyPos = pos;
+        bead._galaxyR = beadR;
+      });
+
+      ctx.restore();
     }
+
+    // 动画循环
+    function animate() {
+      if (isAutoRotating && !isDragging) {
+        galaxyRotation += autoRotateSpeed;
+      }
+      // 平滑缩放
+      if (Math.abs(viewScale - targetScale) > 0.001) {
+        viewScale += (targetScale - viewScale) * 0.1;
+      }
+      // 平移平滑
+      if (Math.abs(viewOffsetX - targetOffsetX) > 0.5) {
+        viewOffsetX += (targetOffsetX - viewOffsetX) * 0.1;
+      }
+      if (Math.abs(viewOffsetY - targetOffsetY) > 0.5) {
+        viewOffsetY += (targetOffsetY - viewOffsetY) * 0.1;
+      }
+      renderGalaxy();
+      requestAnimationFrame(animate);
+    }
+
+    // 屏幕坐标 → 银河系坐标（反向变换）
+    function screenToGalaxy(screenX, screenY) {
+      const cx = cw / 2 + viewOffsetX;
+      const cy = ch / 2 + viewOffsetY;
+      const dx = (screenX - cx) / viewScale;
+      const dy = (screenY - cy) / viewScale;
+      // 反向旋转
+      const cos = Math.cos(-galaxyRotation);
+      const sin = Math.sin(-galaxyRotation);
+      return {
+        x: dx * cos - dy * sin,
+        y: dx * sin + dy * cos
+      };
+    }
+
+    // Hit detection：检测鼠标位置下是哪颗珠子
+    function getBeadAt(screenX, screenY) {
+      const g = screenToGalaxy(screenX, screenY);
+      const sorted = sortedBeads();
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        const bead = sorted[i];
+        const pos = getBeadPosition(bead);
+        const dist = Math.sqrt((g.x - pos.x) ** 2 + (g.y - pos.y) ** 2);
+        if (dist < 15) return bead;
+      }
+      return null;
+    }
+
+    // 银河系坐标 → 屏幕坐标（用于定位 hover 标签）
+    function galaxyToScreen(gx, gy) {
+      const cos = Math.cos(galaxyRotation);
+      const sin = Math.sin(galaxyRotation);
+      const rx = gx * cos - gy * sin;
+      const ry = gx * sin + gy * cos;
+      return {
+        x: cw / 2 + viewOffsetX + rx * viewScale,
+        y: ch / 2 + viewOffsetY + ry * viewScale
+      };
+    }
+
+    // —— 鼠标交互 ——
+    canvas.addEventListener('mousemove', e => {
+      const x = e.clientX;
+      const y = e.clientY;
+
+      if (isDragging) {
+        targetOffsetX += x - dragStartX;
+        targetOffsetY += y - dragStartY;
+        viewOffsetX = targetOffsetX;
+        viewOffsetY = targetOffsetY;
+        dragStartX = x;
+        dragStartY = y;
+        hoverLabel.classList.remove('show');
+        return;
+      }
+
+      const bead = getBeadAt(x, y);
+      if (bead) {
+        hoveredBeadId = bead.id;
+        canvas.style.cursor = 'pointer';
+        const pos = galaxyToScreen(bead._galaxyPos.x, bead._galaxyPos.y);
+        hoverLabel.innerHTML = '<div>' + bead.title + '</div><div class="hover-date">' + compactDate(bead.date) + '</div>';
+        hoverLabel.style.left = (pos.x + 15) + 'px';
+        hoverLabel.style.top = (pos.y - 30) + 'px';
+        hoverLabel.classList.add('show');
+      } else {
+        hoveredBeadId = null;
+        canvas.style.cursor = 'grab';
+        hoverLabel.classList.remove('show');
+      }
+    });
+
+    canvas.addEventListener('mousedown', e => {
+      const x = e.clientX;
+      const y = e.clientY;
+      const bead = getBeadAt(x, y);
+      if (!bead) {
+        isDragging = true;
+        dragStartX = x;
+        dragStartY = y;
+        isAutoRotating = false;
+        canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+        // 3 秒后恢复自动旋转
+        setTimeout(() => { if (!isDragging) isAutoRotating = true; }, 3000);
+      }
+    });
+
+    canvas.addEventListener('click', e => {
+      const bead = getBeadAt(e.clientX, e.clientY);
+      if (bead) showDetail(bead.id);
+    });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      targetScale = Math.max(0.4, Math.min(6, targetScale * delta));
+    }, { passive: false });
+
+    // —— "聚焦最近"功能 ——
+    const focusBtn = document.getElementById('focusBtn');
+    focusBtn.addEventListener('click', () => {
+      if (isFocused) {
+        // 回到全景
+        exitFocus();
+        return;
+      }
+      const sorted = sortedBeads();
+      if (sorted.length === 0) return;
+      const latest = sorted[sorted.length - 1];
+      const pos = getBeadPosition(latest);
+
+      // 旋转到让最近珠子转到正上方
+      const targetAngle = -pos.angle - Math.PI / 2;
+      const startAngle = galaxyRotation;
+      // 归一化角度差到最近路径
+      let angleDiff = targetAngle - startAngle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+      isAutoRotating = false;
+      isFocused = true;
+      focusBtn.classList.add('focus-active');
+      focusBtn.textContent = '✦ 回到全景';
+
+      // 平滑过渡
+      const duration = 1200;
+      const startTime = performance.now();
+      const startScale = viewScale;
+      const startOffsetX = viewOffsetX;
+      const startOffsetY = viewOffsetY;
+      targetScale = 2.8;
+      targetOffsetX = 0;
+      targetOffsetY = 0;
+
+      function focusStep(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        galaxyRotation = startAngle + angleDiff * ease;
+        viewScale = startScale + (targetScale - startScale) * ease;
+        viewOffsetX = startOffsetX + (targetOffsetX - startOffsetX) * ease;
+        viewOffsetY = startOffsetY + (targetOffsetY - startOffsetY) * ease;
+
+        if (t < 1) {
+          requestAnimationFrame(focusStep);
+        } else {
+          highlightedBeadId = latest.id;
+          if (highlightTimer) clearTimeout(highlightTimer);
+        }
+      }
+      requestAnimationFrame(focusStep);
+    });
+
+    function exitFocus() {
+      isFocused = false;
+      focusBtn.classList.remove('focus-active');
+      focusBtn.textContent = '✦ 聚焦最近';
+      highlightedBeadId = null;
+      targetScale = 1;
+      targetOffsetX = 0;
+      targetOffsetY = 0;
+      setTimeout(() => { isAutoRotating = true; }, 500);
+    }
+
+    // 高亮某颗珠子（时间索引点击时调用）
+    function highlightBead(id) {
+      highlightedBeadId = id;
+      if (highlightTimer) clearTimeout(highlightTimer);
+      highlightTimer = setTimeout(() => { highlightedBeadId = null; }, 2500);
+    }
+
+    // renderBeads 兼容函数（银河系持续渲染，数据变化自动反映）
+    function renderBeads() { /* 银河系用 requestAnimationFrame 持续渲染 */ }
 
     /* ==========================================================
-       五、时间索引：按年 → 月 → 珠子（显示完整日期）
+       五、时间索引：按年 → 月 → 珠子
        ========================================================== */
     function renderIndex() {
       const tree = document.getElementById('indexTree');
@@ -1310,7 +974,7 @@
             const item = document.createElement('div');
             item.className = 'index-item';
             item.innerHTML =
-              '<span class="index-item-dot" style="background:radial-gradient(circle at 35% 30%,' + tint.highlight + ',' + tint.mid + ' 45%,' + tint.shadow + ')"></span>' +
+              '<span class="index-item-dot" style="background:radial-gradient(circle at 35% 30%,' + tint.highlight + ',' + tint.mid + ' 45%,' + tint.shadow + ');color:' + tint.mid + '"></span>' +
               '<span class="index-item-text">' + b.title + '</span>' +
               '<span class="index-item-date">' + compactDate(b.date) + '</span>';
             item.addEventListener('click', () => {
@@ -1324,18 +988,8 @@
       });
     }
 
-    // 高亮某颗珠子
-    function highlightBead(id) {
-      document.querySelectorAll('.bead-group').forEach(g => {
-        g.classList.toggle('highlight', g.dataset.id == id);
-      });
-      setTimeout(() => {
-        document.querySelectorAll('.bead-group').forEach(g => g.classList.remove('highlight'));
-      }, 1600);
-    }
-
     /* ==========================================================
-       六、详情面板 + 编辑（标题 / 日期 / 材质 / 调色 / 文字）
+       六、详情面板 + 编辑
        ========================================================== */
     const overlay = document.getElementById('overlay');
     const panel = document.getElementById('detailPanel');
@@ -1357,19 +1011,12 @@
           if (!bead) return;
           bead.materialKey = key;
           bead.tint = null;
-          refreshBeadGradient(bead);
-          renderBeads();
           syncDetailEditState(bead);
           updateDetailPreview(bead);
           saveBeads();
         });
         grid.appendChild(opt);
       });
-    }
-
-    function refreshBeadGradient(bead) {
-      const old = document.getElementById('grad_' + bead.id);
-      if (old) old.remove();
     }
 
     function syncDetailEditState(bead) {
@@ -1405,7 +1052,6 @@
       });
       document.getElementById('detailText').value = bead.text;
 
-      // 照片显示
       const photoArea = document.getElementById('photoArea');
       const oldImg = photoArea.querySelector('img');
       if (oldImg) oldImg.remove();
@@ -1418,13 +1064,11 @@
         photoArea.classList.remove('has-photo');
       }
 
-      // 音乐标题显示（不碰 audio 元素，避免改标题/调色时打断播放）
       document.getElementById('musicTitle').textContent = bead.musicUrl ? (bead.music || '未知曲目') : (bead.music || '未选择音乐');
       document.getElementById('musicBtn').style.background = tint.mid;
       document.getElementById('musicProgress').style.background = tint.mid;
     }
 
-    // 加载珠子音频（只在打开详情/改音乐时调用，避免改标题时打断播放）
     function loadBeadAudio(bead) {
       const audio = document.getElementById('audioPlayer');
       audio.pause();
@@ -1456,24 +1100,26 @@
     }
     document.getElementById('closeBtn').addEventListener('click', closeDetail);
     overlay.addEventListener('click', closeDetail);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetail(); closeIndex(); } });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeDetail();
+        closeIndex();
+        if (isFocused) exitFocus();
+      }
+    });
 
-    // 标题编辑
     document.getElementById('editTitle').addEventListener('input', e => {
       const bead = beads.find(b => b.id === currentBeadId);
-      if (bead) { bead.title = e.target.value; updateDetailPreview(bead); renderBeads(); renderIndex(); saveBeads(); }
+      if (bead) { bead.title = e.target.value; updateDetailPreview(bead); renderIndex(); saveBeads(); }
     });
-    // 日期编辑 —— 改完自动重新排序
     document.getElementById('editDate').addEventListener('change', e => {
       const bead = beads.find(b => b.id === currentBeadId);
-      if (bead) { bead.date = e.target.value; updateDetailPreview(bead); renderBeads(); renderIndex(); saveBeads(); }
+      if (bead) { bead.date = e.target.value; updateDetailPreview(bead); renderIndex(); saveBeads(); }
     });
-    // 文字编辑
     document.getElementById('detailText').addEventListener('input', e => {
       const bead = beads.find(b => b.id === currentBeadId);
       if (bead) { bead.text = e.target.value; saveBeads(); }
     });
-    // 调色 —— 实时
     [['tintHighlight','highlight'],['tintMid','mid'],['tintShadow','shadow']].forEach(([inputId, key]) => {
       document.getElementById(inputId).addEventListener('input', e => {
         const bead = beads.find(b => b.id === currentBeadId);
@@ -1482,8 +1128,6 @@
         if (!bead.tint) bead.tint = { ...mat.tint };
         bead.tint[key] = e.target.value;
         document.getElementById('hex' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = e.target.value;
-        refreshBeadGradient(bead);
-        renderBeads();
         updateDetailPreview(bead);
         renderIndex();
         saveBeads();
@@ -1512,7 +1156,6 @@
         emotion: '待定义', text: '在这里写下这段时光的故事……', music: ''
       };
       beads.push(bead);
-      renderBeads();
       renderIndex();
       showDetail(bead.id);
       saveBeads();
@@ -1520,10 +1163,7 @@
 
     /* ==========================================================
        九、导出 / 导入备份
-       导出：把珠子数据下载为 JSON 文件
-       导入：读取 JSON 文件，恢复珠子数据
        ========================================================== */
-    // 导出备份
     document.getElementById('exportBtn').addEventListener('click', () => {
       const data = JSON.stringify({ beads: beads, nextId: nextId, exportDate: new Date().toISOString() }, null, 2);
       const blob = new Blob([data], { type: 'application/json' });
@@ -1535,7 +1175,6 @@
       URL.revokeObjectURL(url);
     });
 
-    // 导入备份
     document.getElementById('importBtn').addEventListener('click', () => {
       document.getElementById('importFile').click();
     });
@@ -1550,7 +1189,6 @@
             beads = data.beads;
             nextId = data.nextId || (beads.length > 0 ? Math.max(...beads.map(b => b.id)) + 1 : 0);
             saveBeads();
-            renderBeads();
             renderIndex();
             closeDetail();
             alert('导入成功！共恢复 ' + beads.length + ' 颗珠子。');
@@ -1562,13 +1200,11 @@
         }
       };
       reader.readAsText(file);
-      e.target.value = ''; // 重置，方便下次选同一文件
+      e.target.value = '';
     });
 
     /* ==========================================================
        十、照片上传
-       FileReader 读取图片 → canvas 压缩 → base64 存入珠子数据
-       压缩到最大 800px 宽，JPEG 质量 0.7，控制 localStorage 大小
        ========================================================== */
     const photoArea = document.getElementById('photoArea');
     const photoFile = document.getElementById('photoFile');
@@ -1592,15 +1228,14 @@
       reader.onload = ev => {
         const img = new Image();
         img.onload = () => {
-          // 压缩图片
-          const canvas = document.createElement('canvas');
+          const canvasEl = document.createElement('canvas');
           const maxW = 800, maxH = 600;
           let w = img.width, h = img.height;
           if (w > maxW) { h = h * (maxW / w); w = maxW; }
           if (h > maxH) { w = w * (maxH / h); h = maxH; }
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          canvasEl.width = w; canvasEl.height = h;
+          canvasEl.getContext('2d').drawImage(img, 0, 0, w, h);
+          const compressed = canvasEl.toDataURL('image/jpeg', 0.7);
           const bead = beads.find(b => b.id === currentBeadId);
           if (bead) { bead.photo = compressed; saveBeads(); updateDetailPreview(bead); }
         };
@@ -1612,8 +1247,6 @@
 
     /* ==========================================================
        十一、音乐播放 + 联网搜索
-       搜索：通过 CORS 代理调用网易云搜索 API，展示结果
-       播放：HTML5 audio，播放/暂停切换，进度条实时更新
        ========================================================== */
     const audioPlayer = document.getElementById('audioPlayer');
     const musicBtn = document.getElementById('musicBtn');
@@ -1622,7 +1255,6 @@
     const musicSearchResults = document.getElementById('musicSearchResults');
     const musicUrlInput = document.getElementById('musicUrlInput');
 
-    // 播放/暂停切换
     musicBtn.addEventListener('click', () => {
       if (!audioPlayer.src) { musicSearchInput.focus(); return; }
       if (audioPlayer.paused) {
@@ -1637,11 +1269,9 @@
         audioPlayer.pause();
       }
     });
-    // 按钮状态由 audio 事件驱动，保证一致
     audioPlayer.addEventListener('play', () => { musicBtn.textContent = '⏸'; });
     audioPlayer.addEventListener('pause', () => { musicBtn.textContent = '▶'; });
 
-    // 进度条
     audioPlayer.addEventListener('timeupdate', () => {
       if (audioPlayer.duration) {
         const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
@@ -1650,7 +1280,6 @@
     });
     audioPlayer.addEventListener('ended', () => { musicBtn.textContent = '▶'; document.getElementById('musicProgress').style.width = '0%'; });
 
-    // URL 输入框 —— 粘贴/输入后自动加载（防抖 300ms，无需手动按回车）
     let urlInputTimer = null;
     musicUrlInput.addEventListener('input', () => {
       const bead = beads.find(b => b.id === currentBeadId);
@@ -1666,7 +1295,6 @@
       }, 300);
     });
 
-    // 联网搜索音乐 —— 通过 CORS 代理调用网易云 API
     musicSearchBtn.addEventListener('click', () => searchMusic());
     musicSearchInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); searchMusic(); }
@@ -1678,7 +1306,6 @@
       musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">搜索中…</div>';
       musicSearchResults.classList.add('show');
       try {
-        // 通过 CORS 代理调用网易云搜索 API
         const apiUrl = 'https://music.163.com/api/search/get?s=' + encodeURIComponent(keyword) + '&type=1&limit=8';
         const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
         const res = await fetch(proxyUrl);
@@ -1692,7 +1319,6 @@
             item.addEventListener('click', () => {
               const bead = beads.find(b => b.id === currentBeadId);
               if (!bead) return;
-              // 网易云外链播放 URL
               bead.musicUrl = 'https://music.163.com/song/media/outer/url?id=' + song.id + '.mp3';
               bead.music = song.name + ' — ' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '');
               saveBeads();
@@ -1722,16 +1348,20 @@
       beads.splice(idx, 1);
       saveBeads();
       closeDetail();
-      renderBeads();
       renderIndex();
     });
 
     /* ==========================================================
        十三、初始化
        ========================================================== */
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    generateBackgroundStars();
+    generateNebula();
+    generateSpiralDust();
     buildMaterialGrid();
-    renderBeads();
     renderIndex();
+    animate();
   </script>
 </body>
 </html>
