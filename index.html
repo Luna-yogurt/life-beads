@@ -541,6 +541,11 @@
     let targetViewTransition = 0;
     const TILT_Y = 0.55;              // 侧俯视 y 方向压扁系数（模拟 35 度倾斜）
 
+    // 曲线视图的滚动：显示最近 N 颗珠子，可左右滚动查看更早的
+    const TIMELINE_WINDOW = 7;        // 窗口大小（显示几颗珠子）
+    let timelineScroll = 0;           // 从最新端往回滚了多少颗（0=看最新的）
+    let targetTimelineScroll = 0;
+
     let backgroundStars = [];
     let nebulaParticles = [];
     let spiralDust = [];
@@ -573,18 +578,15 @@
       }
     }
 
-    // 生成星云（暖金橙色径向渐变云团）
+    // 生成星云（暖金橙色径向渐变云团）—— 存储极坐标，渲染时在盘面内旋转
     function generateNebula() {
       nebulaParticles = [];
       const count = 50;
       for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * 280 + 60;
         nebulaParticles.push({
-          x: Math.cos(angle) * dist,
-          y: Math.sin(angle) * dist,
+          angle: Math.random() * Math.PI * 2,
+          dist: Math.random() * 280 + 60,
           r: Math.random() * 100 + 50,
-          // 暖金橙色：hue 20-45
           hue: 20 + Math.random() * 25,
           sat: 70 + Math.random() * 20,
           lit: 55 + Math.random() * 15,
@@ -624,33 +626,37 @@
       const total = sorted.length;
       const t = total === 1 ? 0.25 : index / (total - 1);
 
-      const angle = t * Math.PI * 2.8;
+      // 盘面内旋转：角度 + 银河系自转角度
+      const rotAngle = t * Math.PI * 2.8 + galaxyRotation;
       const dist = 70 + t * 340;
 
-      // 原始位置（y 方向压扁，模拟侧俯视）
-      const rawX = Math.cos(angle) * dist;
-      const rawY = Math.sin(angle) * dist * TILT_Y;
-
-      // 应用银河系旋转，让珠子跟随星河一起转
-      const cos = Math.cos(galaxyRotation);
-      const sin = Math.sin(galaxyRotation);
-
+      // 先在盘面内计算位置，再 y 方向压扁投影到屏幕
       return {
-        x: rawX * cos - rawY * sin,
-        y: rawX * sin + rawY * cos,
-        angle: angle,
+        x: Math.cos(rotAngle) * dist,
+        y: Math.sin(rotAngle) * dist * TILT_Y,
+        angle: t * Math.PI * 2.8,
         dist: dist
       };
     }
 
-    // 计算珠子在曲线视图中的位置（沿 S 形贝塞尔曲线分布）
+    // 计算珠子在曲线视图中的位置（窗口式：只显示最近 N 颗，可滚动）
+    // 返回 { x, y } 或 null（珠子不在当前窗口内）
     function getBeadTimelinePosition(bead) {
       const sorted = sortedBeads();
       const index = sorted.findIndex(b => b.id === bead.id);
       const total = sorted.length;
-      const t = total === 1 ? 0.5 : index / (total - 1);
 
-      // S 形贝塞尔曲线控制点（相对屏幕中心）
+      // 窗口范围：最新端为 total-1，往回滚 timelineScroll 颗
+      const windowEnd = total - 1 - timelineScroll;
+      const windowStart = windowEnd - TIMELINE_WINDOW + 1;
+
+      // 珠子在窗口内的相对位置（0=最左/最早，1=最右/最新）
+      const t = (index - windowStart) / (TIMELINE_WINDOW - 1);
+
+      // 窗口外的珠子不显示（留一点余量让珠子平滑滑入滑出）
+      if (t < -0.15 || t > 1.15) return null;
+
+      // S 形贝塞尔曲线控制点
       const w = Math.min(cw, 1200);
       const p0 = { x: -w * 0.42, y: ch * 0.08 };
       const p1 = { x: -w * 0.15, y: -ch * 0.18 };
@@ -662,7 +668,12 @@
       const x = mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x;
       const y = mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y;
 
-      return { x: x, y: y };
+      // 窗口边缘的珠子淡出
+      let alpha = 1;
+      if (t < 0) alpha = Math.max(0, 1 + t / 0.15);
+      else if (t > 1) alpha = Math.max(0, 1 - (t - 1) / 0.15);
+
+      return { x: x, y: y, alpha: alpha };
     }
 
     // 画曲线（贝塞尔曲线，progress 控制透明度）
@@ -706,36 +717,39 @@
         ctx.fill();
       });
 
-      // —— 银河系（跟随旋转，透明度随过渡变化） ——
+      // —— 银河系（粒子在盘面内自转，椭圆轮廓不变） ——
       if (galaxyAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = galaxyAlpha;
         ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
         ctx.scale(viewScale, viewScale);
-        ctx.rotate(galaxyRotation);
 
-        // 星云
+        // 星云（在盘面内旋转，y 方向压扁投影）
         nebulaParticles.forEach(n => {
-          const grad = ctx.createRadialGradient(n.x, n.y * TILT_Y, 0, n.x, n.y * TILT_Y, n.r);
+          const a = n.angle + galaxyRotation;
+          const nx = Math.cos(a) * n.dist;
+          const ny = Math.sin(a) * n.dist * TILT_Y;
+          const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
           grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + n.alpha + ')');
           grad.addColorStop(1, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,0)');
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(n.x, n.y * TILT_Y, n.r, 0, Math.PI * 2);
+          ctx.arc(nx, ny, n.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // 螺旋臂尘埃（y 方向压扁）
+        // 螺旋臂尘埃（在盘面内旋转，y 方向压扁）
         spiralDust.forEach(d => {
-          const x = Math.cos(d.angle) * d.dist;
-          const y = Math.sin(d.angle) * d.dist * TILT_Y;
+          const a = d.angle + galaxyRotation;
+          const x = Math.cos(a) * d.dist;
+          const y = Math.sin(a) * d.dist * TILT_Y;
           ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
           ctx.beginPath();
           ctx.arc(x, y, d.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // 中心核（椭圆，模拟侧俯视）
+        // 中心核（椭圆，不旋转 —— 它是盘面中心，旋转不变）
         ctx.save();
         ctx.scale(1, TILT_Y);
         const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 90);
@@ -770,11 +784,21 @@
       sorted.forEach((bead) => {
         const galaxyPos = getBeadGalaxyPosition(bead);
         const timelinePos = getBeadTimelinePosition(bead);
-        // 位置插值
+
+        // 曲线视图下，窗口外的珠子不渲染
+        if (viewTransition > 0.5 && !timelinePos) {
+          bead._currentPos = null;
+          return;
+        }
+
+        // 位置插值（timelinePos 为 null 时退回银河系位置）
+        const tlPos = timelinePos || { x: galaxyPos.x, y: galaxyPos.y, alpha: 1 };
         const pos = {
-          x: galaxyPos.x + (timelinePos.x - galaxyPos.x) * viewTransition,
-          y: galaxyPos.y + (timelinePos.y - galaxyPos.y) * viewTransition
+          x: galaxyPos.x + (tlPos.x - galaxyPos.x) * viewTransition,
+          y: galaxyPos.y + (tlPos.y - galaxyPos.y) * viewTransition
         };
+        // 窗口边缘淡出
+        const beadAlpha = viewTransition > 0.5 ? tlPos.alpha : 1;
 
         const mat = MATERIALS[bead.materialKey];
         const tint = bead.tint || mat.tint;
@@ -785,6 +809,9 @@
         const isHighlighted = bead.id === highlightedBeadId;
         const beadR = isHovered || isHighlighted ? baseR * 1.5 : baseR;
         const glowR = isHovered || isHighlighted ? beadR * 6 : beadR * 3.5;
+
+        ctx.save();
+        ctx.globalAlpha = beadAlpha;
 
         // 外层光晕
         const glowGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, glowR);
@@ -815,6 +842,8 @@
         ctx.arc(pos.x - beadR * 0.35, pos.y - beadR * 0.35, beadR * 0.15, 0, Math.PI * 2);
         ctx.fill();
 
+        ctx.restore();
+
         // 存储位置用于 hit detection
         bead._currentPos = pos;
         bead._currentR = beadR;
@@ -842,6 +871,10 @@
       // 视图过渡平滑
       if (Math.abs(viewTransition - targetViewTransition) > 0.001) {
         viewTransition += (targetViewTransition - viewTransition) * 0.06;
+      }
+      // 曲线滚动平滑
+      if (Math.abs(timelineScroll - targetTimelineScroll) > 0.01) {
+        timelineScroll += (targetTimelineScroll - timelineScroll) * 0.12;
       }
       renderGalaxy();
       requestAnimationFrame(animate);
@@ -949,8 +982,22 @@
 
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      targetScale = Math.max(0.4, Math.min(6, targetScale * delta));
+      // 曲线视图时：滚轮改为横向滚动浏览珠子
+      if (viewTransition > 0.5) {
+        const total = sortedBeads().length;
+        const maxScroll = Math.max(0, total - TIMELINE_WINDOW);
+        if (e.deltaY > 0) {
+          // 向下滚 → 看更早的（scroll 增大）
+          targetTimelineScroll = Math.min(maxScroll, targetTimelineScroll + 1);
+        } else {
+          // 向上滚 → 看更近的（scroll 减小）
+          targetTimelineScroll = Math.max(0, targetTimelineScroll - 1);
+        }
+      } else {
+        // 银河系视图时：滚轮缩放
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        targetScale = Math.max(0.4, Math.min(6, targetScale * delta));
+      }
     }, { passive: false });
 
     // —— "聚焦最近"功能：银河系 → 抽出曲线 → 聚焦最近珠子 ——
@@ -971,6 +1018,11 @@
 
       // 触发视图过渡：银河系 → 曲线
       targetViewTransition = 1;
+      // 重置滚动到最新端
+      targetTimelineScroll = 0;
+      timelineScroll = 0;
+      // 更新提示
+      document.getElementById('hint').textContent = '滚轮左右浏览时光 · 点击星点打开记忆 · ESC 回到星河';
 
       // 1.5 秒后高亮最近珠子（等过渡完成）
       setTimeout(() => {
@@ -989,6 +1041,7 @@
       targetScale = 1;
       targetOffsetX = 0;
       targetOffsetY = 0;
+      document.getElementById('hint').textContent = '拖拽旋转星河 · 滚轮缩放 · 点击星点打开记忆';
       setTimeout(() => { isAutoRotating = true; }, 800);
     }
 
