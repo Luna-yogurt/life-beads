@@ -401,6 +401,12 @@
         <input type="color" id="tintShadow">
         <span class="tint-hex" id="hexShadow"></span>
       </div>
+      <div class="edit-label" style="margin-top:14px">大小</div>
+      <div class="tint-row">
+        <label>尺寸</label>
+        <input type="range" id="beadSize" min="4" max="20" step="1" style="flex:1;accent-color:#F0997B">
+        <span class="tint-hex" id="hexSize" style="min-width:36px;text-align:right">默认</span>
+      </div>
     </div>
 
     <div class="music-section-label">照片</div>
@@ -803,7 +809,7 @@
         const mat = MATERIALS[bead.materialKey];
         const tint = bead.tint || mat.tint;
         const color = tint.mid;
-        const baseR = 7 + (sorted.indexOf(bead) % 3) * 2;
+        const baseR = bead.size || (7 + (sorted.indexOf(bead) % 3) * 2);
 
         const isHovered = bead.id === hoveredBeadId;
         const isHighlighted = bead.id === highlightedBeadId;
@@ -854,7 +860,7 @@
 
     // 动画循环
     function animate() {
-      if (isAutoRotating && !isDragging && viewTransition < 0.01) {
+      if (!isDragging) {
         galaxyRotation += autoRotateSpeed;
       }
       // 平滑缩放
@@ -961,7 +967,6 @@
         isDragging = true;
         dragStartX = x;
         dragStartY = y;
-        isAutoRotating = false;
         canvas.style.cursor = 'grabbing';
       }
     });
@@ -970,8 +975,6 @@
       if (isDragging) {
         isDragging = false;
         canvas.style.cursor = 'grab';
-        // 3 秒后恢复自动旋转
-        setTimeout(() => { if (!isDragging) isAutoRotating = true; }, 3000);
       }
     });
 
@@ -1011,7 +1014,6 @@
       if (sorted.length === 0) return;
       const latest = sorted[sorted.length - 1];
 
-      isAutoRotating = false;
       isFocused = true;
       focusBtn.classList.add('focus-active');
       focusBtn.textContent = '✦ 回到星河';
@@ -1042,7 +1044,6 @@
       targetOffsetX = 0;
       targetOffsetY = 0;
       document.getElementById('hint').textContent = '拖拽旋转星河 · 滚轮缩放 · 点击星点打开记忆';
-      setTimeout(() => { isAutoRotating = true; }, 800);
     }
 
     // 高亮某颗珠子（时间索引点击时调用）
@@ -1147,6 +1148,16 @@
       document.getElementById('hexShadow').textContent = tint.shadow;
       document.getElementById('editTitle').value = bead.title;
       document.getElementById('editDate').value = bead.date;
+      // 大小滑块
+      const sizeInput = document.getElementById('beadSize');
+      const sizeLabel = document.getElementById('hexSize');
+      if (bead.size) {
+        sizeInput.value = bead.size;
+        sizeLabel.textContent = bead.size + 'px';
+      } else {
+        sizeInput.value = 9;
+        sizeLabel.textContent = '默认';
+      }
     }
 
     function updateDetailPreview(bead) {
@@ -1246,6 +1257,22 @@
         renderIndex();
         saveBeads();
       });
+    });
+
+    // 大小滑块
+    document.getElementById('beadSize').addEventListener('input', e => {
+      const bead = beads.find(b => b.id === currentBeadId);
+      if (!bead) return;
+      const val = parseInt(e.target.value);
+      // 9 是默认大小（7+2），选 9 时清除自定义大小
+      if (val === 9) {
+        bead.size = null;
+        document.getElementById('hexSize').textContent = '默认';
+      } else {
+        bead.size = val;
+        document.getElementById('hexSize').textContent = val + 'px';
+      }
+      saveBeads();
     });
 
     /* ==========================================================
