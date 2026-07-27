@@ -19,27 +19,27 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       text-align: center;
-      padding: 22px 20px 10px;
+      padding: 16px 20px 4px;
       z-index: 5;
       pointer-events: none;
     }
     .header h1 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 300;
       letter-spacing: 10px;
       color: #e8e8ec;
       text-shadow: 0 0 20px rgba(255, 200, 120, 0.3);
     }
     .header p {
-      font-size: 11px;
+      font-size: 10px;
       color: #665544;
-      margin-top: 8px;
+      margin-top: 6px;
       letter-spacing: 3px;
     }
 
     .toolbar {
       position: fixed;
-      top: 64px; left: 0; right: 0;
+      top: 72px; left: 0; right: 0;
       display: flex;
       justify-content: center;
       gap: 10px;
@@ -627,9 +627,17 @@
       const angle = t * Math.PI * 2.8;
       const dist = 70 + t * 340;
 
+      // 原始位置（y 方向压扁，模拟侧俯视）
+      const rawX = Math.cos(angle) * dist;
+      const rawY = Math.sin(angle) * dist * TILT_Y;
+
+      // 应用银河系旋转，让珠子跟随星河一起转
+      const cos = Math.cos(galaxyRotation);
+      const sin = Math.sin(galaxyRotation);
+
       return {
-        x: Math.cos(angle) * dist,
-        y: Math.sin(angle) * dist * TILT_Y,  // y 方向压扁，模拟侧俯视
+        x: rawX * cos - rawY * sin,
+        y: rawX * sin + rawY * cos,
         angle: angle,
         dist: dist
       };
