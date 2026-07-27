@@ -536,6 +536,11 @@
     let highlightTimer = null;
     let isFocused = false;            // 是否在聚焦模式
 
+    // 视图过渡：0 = 银河系视图，1 = 曲线视图
+    let viewTransition = 0;
+    let targetViewTransition = 0;
+    const TILT_Y = 0.55;              // 侧俯视 y 方向压扁系数（模拟 35 度倾斜）
+
     let backgroundStars = [];
     let nebulaParticles = [];
     let spiralDust = [];
@@ -612,35 +617,78 @@
     }
 
     // 计算珠子在银河系中的位置（沿螺旋臂按时间分布）
-    // 时间越早 → 越靠近中心；时间越晚 → 越靠外
-    function getBeadPosition(bead) {
+    // 侧俯视：y 方向压扁模拟 35 度倾斜
+    function getBeadGalaxyPosition(bead) {
       const sorted = sortedBeads();
       const index = sorted.findIndex(b => b.id === bead.id);
       const total = sorted.length;
       const t = total === 1 ? 0.25 : index / (total - 1);
 
-      // 沿螺旋臂分布：角度和距离都随时间增长
       const angle = t * Math.PI * 2.8;
       const dist = 70 + t * 340;
 
       return {
         x: Math.cos(angle) * dist,
-        y: Math.sin(angle) * dist,
+        y: Math.sin(angle) * dist * TILT_Y,  // y 方向压扁，模拟侧俯视
         angle: angle,
         dist: dist
       };
     }
 
-    // 渲染一帧银河系
+    // 计算珠子在曲线视图中的位置（沿 S 形贝塞尔曲线分布）
+    function getBeadTimelinePosition(bead) {
+      const sorted = sortedBeads();
+      const index = sorted.findIndex(b => b.id === bead.id);
+      const total = sorted.length;
+      const t = total === 1 ? 0.5 : index / (total - 1);
+
+      // S 形贝塞尔曲线控制点（相对屏幕中心）
+      const w = Math.min(cw, 1200);
+      const p0 = { x: -w * 0.42, y: ch * 0.08 };
+      const p1 = { x: -w * 0.15, y: -ch * 0.18 };
+      const p2 = { x: w * 0.15, y: ch * 0.22 };
+      const p3 = { x: w * 0.42, y: -ch * 0.05 };
+
+      // 三次贝塞尔曲线
+      const mt = 1 - t;
+      const x = mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x;
+      const y = mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y;
+
+      return { x: x, y: y };
+    }
+
+    // 画曲线（贝塞尔曲线，progress 控制透明度）
+    function drawTimelineCurve(alpha) {
+      if (alpha <= 0.01) return;
+      const w = Math.min(cw, 1200);
+      const p0 = { x: -w * 0.42, y: ch * 0.08 };
+      const p1 = { x: -w * 0.15, y: -ch * 0.18 };
+      const p2 = { x: w * 0.15, y: ch * 0.22 };
+      const p3 = { x: w * 0.42, y: -ch * 0.05 };
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = 'rgba(255, 200, 120, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 8]);
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 渲染一帧
     function renderGalaxy() {
-      // 背景：深空底色
       ctx.fillStyle = '#060611';
       ctx.fillRect(0, 0, cw, ch);
 
       const cx = cw / 2;
       const cy = ch / 2;
+      const galaxyAlpha = 1 - viewTransition;  // 银河系透明度
+      const timelineAlpha = viewTransition;      // 曲线透明度
 
-      // —— 背景星（不跟随银河系旋转，固定在屏幕上） ——
+      // —— 背景星（始终显示） ——
       backgroundStars.forEach(s => {
         s.twinkle += s.twinkleSpeed;
         const brightness = s.brightness * (0.6 + Math.sin(s.twinkle) * 0.4);
@@ -650,52 +698,80 @@
         ctx.fill();
       });
 
-      // —— 银河系（跟随旋转和缩放） ——
-      ctx.save();
-      ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
-      ctx.scale(viewScale, viewScale);
-      ctx.rotate(galaxyRotation);
+      // —— 银河系（跟随旋转，透明度随过渡变化） ——
+      if (galaxyAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = galaxyAlpha;
+        ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
+        ctx.scale(viewScale, viewScale);
+        ctx.rotate(galaxyRotation);
 
-      // 星云
-      nebulaParticles.forEach(n => {
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + n.alpha + ')');
-        grad.addColorStop(1, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,0)');
-        ctx.fillStyle = grad;
+        // 星云
+        nebulaParticles.forEach(n => {
+          const grad = ctx.createRadialGradient(n.x, n.y * TILT_Y, 0, n.x, n.y * TILT_Y, n.r);
+          grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + n.alpha + ')');
+          grad.addColorStop(1, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y * TILT_Y, n.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 螺旋臂尘埃（y 方向压扁）
+        spiralDust.forEach(d => {
+          const x = Math.cos(d.angle) * d.dist;
+          const y = Math.sin(d.angle) * d.dist * TILT_Y;
+          ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 中心核（椭圆，模拟侧俯视）
+        ctx.save();
+        ctx.scale(1, TILT_Y);
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 90);
+        coreGrad.addColorStop(0, 'rgba(255, 245, 220, 0.9)');
+        coreGrad.addColorStop(0.25, 'rgba(255, 210, 140, 0.6)');
+        coreGrad.addColorStop(0.55, 'rgba(220, 160, 80, 0.25)');
+        coreGrad.addColorStop(1, 'rgba(120, 80, 40, 0)');
+        ctx.fillStyle = coreGrad;
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.arc(0, 0, 90, 0, Math.PI * 2);
         ctx.fill();
-      });
+        ctx.restore();
 
-      // 螺旋臂尘埃
-      spiralDust.forEach(d => {
-        const x = Math.cos(d.angle) * d.dist;
-        const y = Math.sin(d.angle) * d.dist;
-        ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
-        ctx.beginPath();
-        ctx.arc(x, y, d.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
+        ctx.restore();
+      }
 
-      // 中心核（明亮金白色）
-      const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 90);
-      coreGrad.addColorStop(0, 'rgba(255, 245, 220, 0.9)');
-      coreGrad.addColorStop(0.25, 'rgba(255, 210, 140, 0.6)');
-      coreGrad.addColorStop(0.55, 'rgba(220, 160, 80, 0.25)');
-      coreGrad.addColorStop(1, 'rgba(120, 80, 40, 0)');
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.arc(0, 0, 90, 0, Math.PI * 2);
-      ctx.fill();
+      // —— 曲线视图（透明度随过渡变化） ——
+      if (timelineAlpha > 0.01) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(viewScale, viewScale);
+        drawTimelineCurve(timelineAlpha);
+        ctx.restore();
+      }
 
-      // 珠子（发光恒星）
+      // —— 珠子（位置在银河系和曲线之间插值） ——
       const sorted = sortedBeads();
+      ctx.save();
+      ctx.translate(cx + viewOffsetX * (1 - viewTransition), cy + viewOffsetY * (1 - viewTransition));
+      ctx.scale(viewScale, viewScale);
+
       sorted.forEach((bead) => {
-        const pos = getBeadPosition(bead);
+        const galaxyPos = getBeadGalaxyPosition(bead);
+        const timelinePos = getBeadTimelinePosition(bead);
+        // 位置插值
+        const pos = {
+          x: galaxyPos.x + (timelinePos.x - galaxyPos.x) * viewTransition,
+          y: galaxyPos.y + (timelinePos.y - galaxyPos.y) * viewTransition
+        };
+
         const mat = MATERIALS[bead.materialKey];
         const tint = bead.tint || mat.tint;
         const color = tint.mid;
-        const baseR = 7 + (sorted.indexOf(bead) % 3) * 2; // 7-11px
+        const baseR = 7 + (sorted.indexOf(bead) % 3) * 2;
 
         const isHovered = bead.id === hoveredBeadId;
         const isHighlighted = bead.id === highlightedBeadId;
@@ -712,7 +788,7 @@
         ctx.arc(pos.x, pos.y, glowR, 0, Math.PI * 2);
         ctx.fill();
 
-        // 珠子本体（径向渐变模拟立体感）
+        // 珠子本体
         const beadGrad = ctx.createRadialGradient(
           pos.x - beadR * 0.3, pos.y - beadR * 0.3, 0,
           pos.x, pos.y, beadR
@@ -732,8 +808,8 @@
         ctx.fill();
 
         // 存储位置用于 hit detection
-        bead._galaxyPos = pos;
-        bead._galaxyR = beadR;
+        bead._currentPos = pos;
+        bead._currentR = beadR;
       });
 
       ctx.restore();
@@ -741,7 +817,7 @@
 
     // 动画循环
     function animate() {
-      if (isAutoRotating && !isDragging) {
+      if (isAutoRotating && !isDragging && viewTransition < 0.01) {
         galaxyRotation += autoRotateSpeed;
       }
       // 平滑缩放
@@ -755,17 +831,21 @@
       if (Math.abs(viewOffsetY - targetOffsetY) > 0.5) {
         viewOffsetY += (targetOffsetY - viewOffsetY) * 0.1;
       }
+      // 视图过渡平滑
+      if (Math.abs(viewTransition - targetViewTransition) > 0.001) {
+        viewTransition += (targetViewTransition - viewTransition) * 0.06;
+      }
       renderGalaxy();
       requestAnimationFrame(animate);
     }
 
     // 屏幕坐标 → 银河系坐标（反向变换）
     function screenToGalaxy(screenX, screenY) {
-      const cx = cw / 2 + viewOffsetX;
-      const cy = ch / 2 + viewOffsetY;
+      const cx = cw / 2 + viewOffsetX * (1 - viewTransition);
+      const cy = ch / 2 + viewOffsetY * (1 - viewTransition);
       const dx = (screenX - cx) / viewScale;
       const dy = (screenY - cy) / viewScale;
-      // 反向旋转
+      // 反向旋转（只在银河系视图时有意义）
       const cos = Math.cos(-galaxyRotation);
       const sin = Math.sin(-galaxyRotation);
       return {
@@ -776,12 +856,15 @@
 
     // Hit detection：检测鼠标位置下是哪颗珠子
     function getBeadAt(screenX, screenY) {
-      const g = screenToGalaxy(screenX, screenY);
+      const cx = cw / 2 + viewOffsetX * (1 - viewTransition);
+      const cy = ch / 2 + viewOffsetY * (1 - viewTransition);
+      const dx = (screenX - cx) / viewScale;
+      const dy = (screenY - cy) / viewScale;
       const sorted = sortedBeads();
       for (let i = sorted.length - 1; i >= 0; i--) {
         const bead = sorted[i];
-        const pos = getBeadPosition(bead);
-        const dist = Math.sqrt((g.x - pos.x) ** 2 + (g.y - pos.y) ** 2);
+        if (!bead._currentPos) continue;
+        const dist = Math.sqrt((dx - bead._currentPos.x) ** 2 + (dy - bead._currentPos.y) ** 2);
         if (dist < 15) return bead;
       }
       return null;
@@ -789,13 +872,11 @@
 
     // 银河系坐标 → 屏幕坐标（用于定位 hover 标签）
     function galaxyToScreen(gx, gy) {
-      const cos = Math.cos(galaxyRotation);
-      const sin = Math.sin(galaxyRotation);
-      const rx = gx * cos - gy * sin;
-      const ry = gx * sin + gy * cos;
+      const cx = cw / 2 + viewOffsetX * (1 - viewTransition);
+      const cy = ch / 2 + viewOffsetY * (1 - viewTransition);
       return {
-        x: cw / 2 + viewOffsetX + rx * viewScale,
-        y: ch / 2 + viewOffsetY + ry * viewScale
+        x: cx + gx * viewScale,
+        y: cy + gy * viewScale
       };
     }
 
@@ -819,7 +900,7 @@
       if (bead) {
         hoveredBeadId = bead.id;
         canvas.style.cursor = 'pointer';
-        const pos = galaxyToScreen(bead._galaxyPos.x, bead._galaxyPos.y);
+        const pos = galaxyToScreen(bead._currentPos.x, bead._currentPos.y);
         hoverLabel.innerHTML = '<div>' + bead.title + '</div><div class="hover-date">' + compactDate(bead.date) + '</div>';
         hoverLabel.style.left = (pos.x + 15) + 'px';
         hoverLabel.style.top = (pos.y - 30) + 'px';
@@ -864,60 +945,29 @@
       targetScale = Math.max(0.4, Math.min(6, targetScale * delta));
     }, { passive: false });
 
-    // —— "聚焦最近"功能 ——
+    // —— "聚焦最近"功能：银河系 → 抽出曲线 → 聚焦最近珠子 ——
     const focusBtn = document.getElementById('focusBtn');
     focusBtn.addEventListener('click', () => {
       if (isFocused) {
-        // 回到全景
         exitFocus();
         return;
       }
       const sorted = sortedBeads();
       if (sorted.length === 0) return;
       const latest = sorted[sorted.length - 1];
-      const pos = getBeadPosition(latest);
-
-      // 旋转到让最近珠子转到正上方
-      const targetAngle = -pos.angle - Math.PI / 2;
-      const startAngle = galaxyRotation;
-      // 归一化角度差到最近路径
-      let angleDiff = targetAngle - startAngle;
-      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
       isAutoRotating = false;
       isFocused = true;
       focusBtn.classList.add('focus-active');
-      focusBtn.textContent = '✦ 回到全景';
+      focusBtn.textContent = '✦ 回到星河';
 
-      // 平滑过渡
-      const duration = 1200;
-      const startTime = performance.now();
-      const startScale = viewScale;
-      const startOffsetX = viewOffsetX;
-      const startOffsetY = viewOffsetY;
-      targetScale = 2.8;
-      targetOffsetX = 0;
-      targetOffsetY = 0;
+      // 触发视图过渡：银河系 → 曲线
+      targetViewTransition = 1;
 
-      function focusStep(now) {
-        const elapsed = now - startTime;
-        const t = Math.min(elapsed / duration, 1);
-        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-        galaxyRotation = startAngle + angleDiff * ease;
-        viewScale = startScale + (targetScale - startScale) * ease;
-        viewOffsetX = startOffsetX + (targetOffsetX - startOffsetX) * ease;
-        viewOffsetY = startOffsetY + (targetOffsetY - startOffsetY) * ease;
-
-        if (t < 1) {
-          requestAnimationFrame(focusStep);
-        } else {
-          highlightedBeadId = latest.id;
-          if (highlightTimer) clearTimeout(highlightTimer);
-        }
-      }
-      requestAnimationFrame(focusStep);
+      // 1.5 秒后高亮最近珠子（等过渡完成）
+      setTimeout(() => {
+        highlightedBeadId = latest.id;
+      }, 1500);
     });
 
     function exitFocus() {
@@ -925,10 +975,13 @@
       focusBtn.classList.remove('focus-active');
       focusBtn.textContent = '✦ 聚焦最近';
       highlightedBeadId = null;
+      // 触发视图过渡：曲线 → 银河系
+      targetViewTransition = 0;
+      // 重置缩放和偏移
       targetScale = 1;
       targetOffsetX = 0;
       targetOffsetY = 0;
-      setTimeout(() => { isAutoRotating = true; }, 500);
+      setTimeout(() => { isAutoRotating = true; }, 800);
     }
 
     // 高亮某颗珠子（时间索引点击时调用）
