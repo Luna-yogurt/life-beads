@@ -556,15 +556,15 @@
     // 生成背景星（不跟随银河系旋转，增加深度感）
     function generateBackgroundStars() {
       backgroundStars = [];
-      const count = 350;
+      const count = 550;
       for (let i = 0; i < count; i++) {
         backgroundStars.push({
-          x: (Math.random() - 0.5) * 2000,
-          y: (Math.random() - 0.5) * 2000,
-          r: Math.random() * 1.2 + 0.2,
-          brightness: Math.random() * 0.5 + 0.2,
+          x: (Math.random() - 0.5) * 2400,
+          y: (Math.random() - 0.5) * 2400,
+          r: Math.random() * 1.4 + 0.2,
+          brightness: Math.random() * 0.5 + 0.15,
           twinkle: Math.random() * Math.PI * 2,
-          twinkleSpeed: Math.random() * 0.02 + 0.005
+          twinkleSpeed: Math.random() * 0.025 + 0.003
         });
       }
     }
@@ -590,28 +590,28 @@
         }
         nebulaParticles.push({
           angle: Math.random() * Math.PI * 2,
-          dist: Math.random() * 320 + 40,
-          r: Math.random() * 140 + 60,      // 更大更柔和
+          dist: Math.random() * 420 + 40,
+          r: Math.random() * 160 + 60,      // 更大更柔和
           hue: hue,
           sat: 60 + Math.random() * 30,
           lit: 50 + Math.random() * 20,
-          alpha: Math.random() * 0.08 + 0.02 // 更低透明度，更梦幻
+          alpha: Math.random() * 0.07 + 0.02 // 更低透明度，更梦幻
         });
       }
     }
 
-    // 生成螺旋臂尘埃（更多粒子 + 更暗更模糊 + 多色，营造虚无缥缈感）
+    // 生成螺旋臂尘埃（更多粒子 + 更大范围 + 更模糊散布，壮阔梦幻感）
     function generateSpiralDust() {
       spiralDust = [];
       const numArms = 2;
-      const particlesPerArm = 400;
+      const particlesPerArm = 600;  // 多半倍
       for (let arm = 0; arm < numArms; arm++) {
         const armOffset = (Math.PI * 2 / numArms) * arm;
         for (let i = 0; i < particlesPerArm; i++) {
           const t = i / particlesPerArm;
-          const angle = armOffset + t * Math.PI * 3.2;
-          const dist = 50 + t * 400;
-          const spread = (Math.random() - 0.5) * 50;  // 更大散布
+          const angle = armOffset + t * Math.PI * 4.0;  // 更多圈，往外延伸
+          const dist = 50 + t * 600;                     // 往外延伸更远
+          const spread = (Math.random() - 0.5) * 80;     // 更大散布，轨道不分明
           // 随机色相：金橙为主，偶尔粉/蓝/紫
           const colorRoll = Math.random();
           let hue;
@@ -621,8 +621,8 @@
           spiralDust.push({
             angle: angle,
             dist: dist + spread,
-            r: Math.random() * 1.8 + 0.2,   // 大小变化更大
-            brightness: Math.random() * 0.35 + 0.05, // 更暗更柔和
+            r: Math.random() * 2.2 + 0.3,      // 稍大更柔和
+            brightness: Math.random() * 0.25 + 0.03, // 更暗更柔，轨道模糊
             hue: hue
           });
         }
