@@ -337,16 +337,16 @@
 <body>
 
   <div class="header">
-    <h1>人 生 星 河</h1>
-    <p>每一颗星，都是时光里的闪光</p>
+    <h1>GALAXY OF LIFE</h1>
+    <p>Every star, a moment of light</p>
   </div>
 
   <div class="toolbar">
-    <button class="tool-btn" id="focusBtn">✦ 聚焦最近</button>
-    <button class="tool-btn" id="indexBtn">⋰ 时间索引</button>
-    <button class="tool-btn" id="addBeadBtn">＋ 新增珠子</button>
-    <button class="tool-btn" id="exportBtn">⬇ 导出备份</button>
-    <button class="tool-btn" id="importBtn">⬆ 导入备份</button>
+    <button class="tool-btn" id="focusBtn">✦ Focus Latest</button>
+    <button class="tool-btn" id="indexBtn">⋰ Index</button>
+    <button class="tool-btn" id="addBeadBtn">＋ New Star</button>
+    <button class="tool-btn" id="exportBtn">⬇ Export</button>
+    <button class="tool-btn" id="importBtn">⬆ Import</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
   </div>
 
@@ -355,13 +355,13 @@
   </div>
   <div class="hover-label" id="hoverLabel"></div>
 
-  <div class="hint">拖拽旋转星河 · 滚轮缩放 · 点击星点打开记忆</div>
+  <div class="hint">Drag to rotate · Scroll to zoom · Click a star to open memory</div>
 
   <div class="index-overlay" id="indexOverlay"></div>
   <div class="index-panel" id="indexPanel">
     <button class="index-close" id="indexCloseBtn">&times;</button>
-    <div class="index-title">时 间 索 引</div>
-    <div class="index-sub">按年 · 月 · 日 查找你的珠子</div>
+    <div class="index-title">TIMELINE INDEX</div>
+    <div class="index-sub">Browse by year · month · day</div>
     <div id="indexTree"></div>
   </div>
 
@@ -374,71 +374,56 @@
     <div class="detail-tags" id="detailTags"></div>
 
     <div class="edit-section">
-      <div class="edit-label">编辑这颗珠子</div>
+      <div class="edit-label">Edit This Star</div>
       <div class="edit-row">
-        <label>标题</label>
-        <input type="text" id="editTitle" placeholder="给这颗珠子起个名字">
+        <label>Title</label>
+        <input type="text" id="editTitle" placeholder="Name this star">
       </div>
       <div class="edit-row">
-        <label>日期</label>
+        <label>Date</label>
         <input type="date" id="editDate">
       </div>
-      <div class="edit-label" style="margin-top:14px">材质（选择颜色方案）</div>
+      <div class="edit-label" style="margin-top:14px">Material (color palette)</div>
       <div class="material-grid" id="materialGrid"></div>
-      <div class="edit-label" style="margin-top:14px">调色（自定义颜色）</div>
+      <div class="edit-label" style="margin-top:14px">Custom Color</div>
       <div class="tint-row">
-        <label>高光</label>
+        <label>Highlight</label>
         <input type="color" id="tintHighlight">
         <span class="tint-hex" id="hexHighlight"></span>
       </div>
       <div class="tint-row">
-        <label>中间</label>
+        <label>Mid</label>
         <input type="color" id="tintMid">
         <span class="tint-hex" id="hexMid"></span>
       </div>
       <div class="tint-row">
-        <label>暗部</label>
+        <label>Shadow</label>
         <input type="color" id="tintShadow">
         <span class="tint-hex" id="hexShadow"></span>
       </div>
-      <div class="edit-label" style="margin-top:14px">大小</div>
+      <div class="edit-label" style="margin-top:14px">Size</div>
       <div class="tint-row">
-        <label>尺寸</label>
+        <label>Size</label>
         <input type="range" id="beadSize" min="4" max="20" step="1" style="flex:1;accent-color:#F0997B">
-        <span class="tint-hex" id="hexSize" style="min-width:36px;text-align:right">默认</span>
+        <span class="tint-hex" id="hexSize" style="min-width:36px;text-align:right">Default</span>
       </div>
     </div>
 
-    <div class="music-section-label">照片</div>
+    <div class="music-section-label">Photo</div>
     <div class="photo-upload-zone" id="photoArea">
-      <div class="upload-hint"><span>📷</span>点击上传照片</div>
+      <div class="upload-hint"><span>📷</span>Click to upload</div>
       <button class="photo-remove-btn" id="photoRemoveBtn">&times;</button>
     </div>
     <input type="file" id="photoFile" accept="image/*" style="display:none">
 
-    <textarea class="detail-text" id="detailText" placeholder="在这里写下这段时光的故事……"></textarea>
+    <textarea class="detail-text" id="detailText" placeholder="Write the story of this moment..."></textarea>
 
-    <div class="music-section-label">音乐</div>
-    <div class="music-search-row">
-      <input type="text" class="music-search-input" id="musicSearchInput" placeholder="搜索歌曲名或歌手…">
-      <button class="music-search-btn" id="musicSearchBtn">搜索</button>
-    </div>
-    <div class="music-search-results" id="musicSearchResults"></div>
+    <div class="music-section-label">Music</div>
     <div class="music-url-row">
-      <input type="text" class="music-url-input" id="musicUrlInput" placeholder="或直接粘贴音乐链接 (URL)">
+      <input type="text" class="music-url-input" id="musicUrlInput" placeholder="Write down a song name to remember it">
     </div>
-    <div class="detail-music">
-      <button class="music-play-btn" id="musicBtn">▶</button>
-      <div class="music-info">
-        <div class="music-title" id="musicTitle">未选择音乐</div>
-        <div class="music-bar">
-          <div class="music-progress" id="musicProgress"></div>
-        </div>
-      </div>
-    </div>
-    <audio id="audioPlayer" preload="none"></audio>
 
-    <button class="delete-btn" id="deleteBeadBtn">🗑 删除这颗珠子</button>
+    <button class="delete-btn" id="deleteBeadBtn">🗑 Delete this star</button>
   </div>
 
   <script>
@@ -584,41 +569,61 @@
       }
     }
 
-    // 生成星云（暖金橙色径向渐变云团）—— 存储极坐标，渲染时在盘面内旋转
+    // 生成星云（多色：暖金橙 + 玫红 + 粉紫 + 深蓝，营造壮阔梦幻感）
     function generateNebula() {
       nebulaParticles = [];
-      const count = 50;
+      const palettes = [
+        { hueMin: 20, hueMax: 45 },   // 暖金橙
+        { hueMin: 350, hueMax: 15 },  // 玫红
+        { hueMin: 300, hueMax: 340 }, // 粉紫
+        { hueMin: 200, hueMax: 240 }, // 深蓝
+        { hueMin: 0, hueMax: 360 }    // 偶尔其他色
+      ];
+      const count = 80;
       for (let i = 0; i < count; i++) {
+        const p = palettes[Math.floor(Math.random() * palettes.length)];
+        let hue;
+        if (p.hueMin > p.hueMax) {
+          hue = (p.hueMin + Math.random() * (360 - p.hueMin + p.hueMax)) % 360;
+        } else {
+          hue = p.hueMin + Math.random() * (p.hueMax - p.hueMin);
+        }
         nebulaParticles.push({
           angle: Math.random() * Math.PI * 2,
-          dist: Math.random() * 280 + 60,
-          r: Math.random() * 100 + 50,
-          hue: 20 + Math.random() * 25,
-          sat: 70 + Math.random() * 20,
-          lit: 55 + Math.random() * 15,
-          alpha: Math.random() * 0.12 + 0.04
+          dist: Math.random() * 320 + 40,
+          r: Math.random() * 140 + 60,      // 更大更柔和
+          hue: hue,
+          sat: 60 + Math.random() * 30,
+          lit: 50 + Math.random() * 20,
+          alpha: Math.random() * 0.08 + 0.02 // 更低透明度，更梦幻
         });
       }
     }
 
-    // 生成螺旋臂尘埃（沿 2 条螺旋臂分布的小金橙点）
+    // 生成螺旋臂尘埃（更多粒子 + 更暗更模糊 + 多色，营造虚无缥缈感）
     function generateSpiralDust() {
       spiralDust = [];
       const numArms = 2;
-      const particlesPerArm = 250;
+      const particlesPerArm = 400;
       for (let arm = 0; arm < numArms; arm++) {
         const armOffset = (Math.PI * 2 / numArms) * arm;
         for (let i = 0; i < particlesPerArm; i++) {
           const t = i / particlesPerArm;
           const angle = armOffset + t * Math.PI * 3.2;
-          const dist = 50 + t * 380;
-          const spread = (Math.random() - 0.5) * 35;
+          const dist = 50 + t * 400;
+          const spread = (Math.random() - 0.5) * 50;  // 更大散布
+          // 随机色相：金橙为主，偶尔粉/蓝/紫
+          const colorRoll = Math.random();
+          let hue;
+          if (colorRoll < 0.6) hue = 20 + Math.random() * 25;       // 60% 金橙
+          else if (colorRoll < 0.8) hue = 300 + Math.random() * 40; // 20% 粉紫
+          else hue = 200 + Math.random() * 40;                       // 20% 蓝
           spiralDust.push({
             angle: angle,
             dist: dist + spread,
-            r: Math.random() * 1.4 + 0.3,
-            brightness: Math.random() * 0.6 + 0.2,
-            hue: 25 + Math.random() * 20
+            r: Math.random() * 1.8 + 0.2,   // 大小变化更大
+            brightness: Math.random() * 0.35 + 0.05, // 更暗更柔和
+            hue: hue
           });
         }
       }
@@ -682,7 +687,7 @@
       return { x: x, y: y, alpha: alpha };
     }
 
-    // 画曲线（贝塞尔曲线，progress 控制透明度）
+    // 画曲线（更淡更模糊，虚无缥缈感）
     function drawTimelineCurve(alpha) {
       if (alpha <= 0.01) return;
       const w = Math.min(cw, 1200);
@@ -693,9 +698,18 @@
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.strokeStyle = 'rgba(255, 200, 120, 0.15)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 8]);
+      // 外层光晕线（很淡很宽）
+      ctx.strokeStyle = 'rgba(255, 200, 120, 0.04)';
+      ctx.lineWidth = 8;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+      ctx.stroke();
+      // 内层虚线（更淡更稀疏）
+      ctx.strokeStyle = 'rgba(255, 200, 120, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 12]);
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
@@ -1016,7 +1030,7 @@
 
       isFocused = true;
       focusBtn.classList.add('focus-active');
-      focusBtn.textContent = '✦ 回到星河';
+      focusBtn.textContent = '✦ Back to Galaxy';
 
       // 触发视图过渡：银河系 → 曲线
       targetViewTransition = 1;
@@ -1024,7 +1038,7 @@
       targetTimelineScroll = 0;
       timelineScroll = 0;
       // 更新提示
-      document.getElementById('hint').textContent = '滚轮左右浏览时光 · 点击星点打开记忆 · ESC 回到星河';
+      document.getElementById('hint').textContent = 'Scroll to browse · Click a star · ESC to return';
 
       // 1.5 秒后高亮最近珠子（等过渡完成）
       setTimeout(() => {
@@ -1035,7 +1049,7 @@
     function exitFocus() {
       isFocused = false;
       focusBtn.classList.remove('focus-active');
-      focusBtn.textContent = '✦ 聚焦最近';
+      focusBtn.textContent = '✦ Focus Latest';
       highlightedBeadId = null;
       // 触发视图过渡：曲线 → 银河系
       targetViewTransition = 0;
@@ -1043,7 +1057,7 @@
       targetScale = 1;
       targetOffsetX = 0;
       targetOffsetY = 0;
-      document.getElementById('hint').textContent = '拖拽旋转星河 · 滚轮缩放 · 点击星点打开记忆';
+      document.getElementById('hint').textContent = 'Drag to rotate · Scroll to zoom · Click a star to open memory';
     }
 
     // 高亮某颗珠子（时间索引点击时调用）
@@ -1156,7 +1170,7 @@
         sizeLabel.textContent = bead.size + 'px';
       } else {
         sizeInput.value = 9;
-        sizeLabel.textContent = '默认';
+        sizeLabel.textContent = 'Default';
       }
     }
 
@@ -1189,24 +1203,8 @@
         photoArea.classList.remove('has-photo');
       }
 
-      document.getElementById('musicTitle').textContent = bead.musicUrl ? (bead.music || '未知曲目') : (bead.music || '未选择音乐');
-      document.getElementById('musicBtn').style.background = tint.mid;
-      document.getElementById('musicProgress').style.background = tint.mid;
-    }
-
-    function loadBeadAudio(bead) {
-      const audio = document.getElementById('audioPlayer');
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = '';
-      document.getElementById('musicBtn').textContent = '▶';
-      document.getElementById('musicProgress').style.width = '0%';
-      if (bead.musicUrl) {
-        audio.src = bead.musicUrl;
-        document.getElementById('musicUrlInput').value = bead.musicUrl;
-      } else {
-        document.getElementById('musicUrlInput').value = '';
-      }
+      // 音乐输入框显示歌名
+      document.getElementById('musicUrlInput').value = bead.music || '';
     }
 
     function showDetail(id) {
@@ -1215,7 +1213,6 @@
       currentBeadId = id;
       syncDetailEditState(bead);
       updateDetailPreview(bead);
-      loadBeadAudio(bead);
       overlay.classList.add('active');
       panel.classList.add('active');
     }
@@ -1267,7 +1264,7 @@
       // 9 是默认大小（7+2），选 9 时清除自定义大小
       if (val === 9) {
         bead.size = null;
-        document.getElementById('hexSize').textContent = '默认';
+        document.getElementById('hexSize').textContent = 'Default';
       } else {
         bead.size = val;
         document.getElementById('hexSize').textContent = val + 'px';
@@ -1294,7 +1291,7 @@
       const bead = {
         id: nextId++, title: '新的珠子', date: today,
         materialKey: 'pearl', tint: null,
-        emotion: '待定义', text: '在这里写下这段时光的故事……', music: ''
+        emotion: 'Undefined', text: 'Write the story of this moment...', music: ''
       };
       beads.push(bead);
       renderIndex();
@@ -1332,12 +1329,12 @@
             saveBeads();
             renderIndex();
             closeDetail();
-            alert('导入成功！共恢复 ' + beads.length + ' 颗珠子。');
+            alert('Imported successfully! ' + beads.length + ' stars restored.');
           } else {
-            alert('文件格式不对，请选择正确的备份文件。');
+            alert('Invalid file format. Please select a valid backup file.');
           }
         } catch (err) {
-          alert('读取失败：' + err.message);
+          alert('Read failed: ' + err.message);
         }
       };
       reader.readAsText(file);
@@ -1364,7 +1361,7 @@
     photoFile.addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) { alert('图片太大（超过 10MB），请选小一点的。'); return; }
+      if (file.size > 10 * 1024 * 1024) { alert('Image too large (over 10MB). Please choose a smaller one.'); return; }
       const reader = new FileReader();
       reader.onload = ev => {
         const img = new Image();
@@ -1387,96 +1384,20 @@
     });
 
     /* ==========================================================
-       十一、音乐播放 + 联网搜索
+       十一、音乐（简化版：只记录歌名）
        ========================================================== */
-    const audioPlayer = document.getElementById('audioPlayer');
-    const musicBtn = document.getElementById('musicBtn');
-    const musicSearchInput = document.getElementById('musicSearchInput');
-    const musicSearchBtn = document.getElementById('musicSearchBtn');
-    const musicSearchResults = document.getElementById('musicSearchResults');
     const musicUrlInput = document.getElementById('musicUrlInput');
 
-    musicBtn.addEventListener('click', () => {
-      if (!audioPlayer.src) { musicSearchInput.focus(); return; }
-      if (audioPlayer.paused) {
-        audioPlayer.play().catch(() => {
-          musicBtn.textContent = '▶';
-          const t = document.getElementById('musicTitle');
-          const orig = t.textContent;
-          t.textContent = '⚠ 播放失败（链接无效或版权限制）';
-          setTimeout(() => { if (t.textContent.indexOf('播放失败') > -1) t.textContent = orig; }, 2500);
-        });
-      } else {
-        audioPlayer.pause();
-      }
-    });
-    audioPlayer.addEventListener('play', () => { musicBtn.textContent = '⏸'; });
-    audioPlayer.addEventListener('pause', () => { musicBtn.textContent = '▶'; });
-
-    audioPlayer.addEventListener('timeupdate', () => {
-      if (audioPlayer.duration) {
-        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        document.getElementById('musicProgress').style.width = pct + '%';
-      }
-    });
-    audioPlayer.addEventListener('ended', () => { musicBtn.textContent = '▶'; document.getElementById('musicProgress').style.width = '0%'; });
-
-    let urlInputTimer = null;
+    let musicInputTimer = null;
     musicUrlInput.addEventListener('input', () => {
       const bead = beads.find(b => b.id === currentBeadId);
       if (!bead) return;
-      clearTimeout(urlInputTimer);
-      urlInputTimer = setTimeout(() => {
-        const url = musicUrlInput.value.trim();
-        bead.musicUrl = url || null;
-        if (url && !bead.music) bead.music = '自定义音乐';
+      clearTimeout(musicInputTimer);
+      musicInputTimer = setTimeout(() => {
+        bead.music = musicUrlInput.value.trim() || '';
         saveBeads();
-        loadBeadAudio(bead);
-        updateDetailPreview(bead);
       }, 300);
     });
-
-    musicSearchBtn.addEventListener('click', () => searchMusic());
-    musicSearchInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); searchMusic(); }
-    });
-
-    async function searchMusic() {
-      const keyword = musicSearchInput.value.trim();
-      if (!keyword) return;
-      musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">搜索中…</div>';
-      musicSearchResults.classList.add('show');
-      try {
-        const apiUrl = 'https://music.163.com/api/search/get?s=' + encodeURIComponent(keyword) + '&type=1&limit=8';
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
-        if (data.code === 200 && data.result && data.result.songs && data.result.songs.length > 0) {
-          musicSearchResults.innerHTML = '';
-          data.result.songs.forEach(song => {
-            const item = document.createElement('div');
-            item.className = 'music-result-item';
-            item.innerHTML = '<span class="song-name">' + song.name + '</span><span class="song-artist">' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '') + '</span>';
-            item.addEventListener('click', () => {
-              const bead = beads.find(b => b.id === currentBeadId);
-              if (!bead) return;
-              bead.musicUrl = 'https://music.163.com/song/media/outer/url?id=' + song.id + '.mp3';
-              bead.music = song.name + ' — ' + (song.artists ? song.artists.map(a => a.name).join(' / ') : '');
-              saveBeads();
-              loadBeadAudio(bead);
-              updateDetailPreview(bead);
-              musicSearchResults.classList.remove('show');
-              musicSearchResults.innerHTML = '';
-            });
-            musicSearchResults.appendChild(item);
-          });
-        } else {
-          musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">没找到，试试手动粘贴链接</div>';
-        }
-      } catch (err) {
-        musicSearchResults.innerHTML = '<div style="color:#555566;font-size:12px;padding:8px">搜索失败（网络限制），请手动粘贴音乐链接</div>';
-      }
-    }
 
     /* ==========================================================
        十二、删除珠子
@@ -1484,7 +1405,7 @@
     document.getElementById('deleteBeadBtn').addEventListener('click', () => {
       const bead = beads.find(b => b.id === currentBeadId);
       if (!bead) return;
-      if (!confirm('确定删除「' + bead.title + '」这颗珠子吗？\n删除后无法恢复，建议先导出备份。')) return;
+      if (!confirm('Delete "' + bead.title + '"?\nThis cannot be undone. Consider exporting a backup first.')) return;
       const idx = beads.indexOf(bead);
       beads.splice(idx, 1);
       saveBeads();
