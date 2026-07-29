@@ -540,6 +540,7 @@
     let backgroundStars = [];
     let nebulaParticles = [];
     let spiralDust = [];
+    let scatteredStars = [];  // 轨道内外随机散布的亮星
 
     // 调整 Canvas 尺寸（支持高 DPI）
     function resizeCanvas() {
@@ -579,7 +580,7 @@
         { hueMin: 200, hueMax: 240 }, // 深蓝
         { hueMin: 0, hueMax: 360 }    // 偶尔其他色
       ];
-      const count = 80;
+      const count = 110;
       for (let i = 0; i < count; i++) {
         const p = palettes[Math.floor(Math.random() * palettes.length)];
         let hue;
@@ -590,13 +591,13 @@
         }
         nebulaParticles.push({
           angle: Math.random() * Math.PI * 2,
-          // 星云分布偏向螺旋臂区域（距离与角度关联），形状更规则
-          dist: 80 + Math.random() * 380,
-          r: Math.random() * 140 + 50,
+          // 星云往外扩铺匀，从中心到外围都有覆盖
+          dist: 40 + Math.random() * 560,
+          r: Math.random() * 160 + 60,
           hue: hue,
           sat: 60 + Math.random() * 30,
           lit: 50 + Math.random() * 20,
-          alpha: Math.random() * 0.06 + 0.015
+          alpha: Math.random() * 0.05 + 0.012
         });
       }
     }
@@ -616,8 +617,8 @@
           const spreadAmount = 25 + t * 35;
           const spread = (Math.random() - 0.5) * spreadAmount;
 
-          // 15% 亮星（跳出来的恒星），85% 暗星尘
-          const isBright = Math.random() < 0.15;
+          // 28% 亮星（跳出来的恒星），72% 暗星尘
+          const isBright = Math.random() < 0.28;
           let hue, brightness, r;
           if (isBright) {
             // 亮星：白色或亮色，跳出来
@@ -646,6 +647,28 @@
             isBright: isBright
           });
         }
+      }
+    }
+
+    // 生成散布亮星（轨道内外随机分布，不跟随螺旋臂结构，增加壮阔感）
+    function generateScatteredStars() {
+      scatteredStars = [];
+      const count = 120;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 650;  // 从中心到最外围
+        const brightColor = Math.random();
+        let hue;
+        if (brightColor < 0.5) hue = -1;  // 白色
+        else if (brightColor < 0.75) hue = 35 + Math.random() * 10;  // 亮金
+        else hue = 210 + Math.random() * 20;  // 亮蓝
+        scatteredStars.push({
+          angle: angle,
+          dist: dist,
+          r: 0.6 + Math.random() * 1.4,
+          brightness: 0.6 + Math.random() * 0.4,
+          hue: hue
+        });
       }
     }
 
@@ -804,6 +827,30 @@
           }
           ctx.beginPath();
           ctx.arc(x, y, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 散布亮星（轨道内外随机分布，跟随盘面旋转，y 压扁）
+        scatteredStars.forEach(s => {
+          const a = s.angle + galaxyRotation;
+          const x = Math.cos(a) * s.dist;
+          const y = Math.sin(a) * s.dist * TILT_Y;
+          // 光晕
+          const glowR = s.r * 3.5;
+          const glowColor = s.hue < 0 ? 'rgba(255,255,255,' : 'hsla(' + s.hue + ',90%,75%,';
+          const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+          grad.addColorStop(0, glowColor + (s.brightness * 0.35) + ')');
+          grad.addColorStop(1, glowColor + '0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(x, y, glowR, 0, Math.PI * 2);
+          ctx.fill();
+          // 本体
+          ctx.fillStyle = s.hue < 0
+            ? 'rgba(255,255,255,' + s.brightness + ')'
+            : 'hsla(' + s.hue + ',90%,80%,' + s.brightness + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, s.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
@@ -1459,6 +1506,7 @@
     generateBackgroundStars();
     generateNebula();
     generateSpiralDust();
+    generateScatteredStars();
     buildMaterialGrid();
     renderIndex();
     animate();
