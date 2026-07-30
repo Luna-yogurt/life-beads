@@ -849,7 +849,7 @@
 
     // 渲染一帧
     function renderGalaxy() {
-      ctx.fillStyle = '#040408';  // 更深的背景底色
+      ctx.fillStyle = '#020205';  // 更深的背景底色
       ctx.fillRect(0, 0, cw, ch);
 
       const cx = cw / 2;
@@ -874,25 +874,26 @@
         ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
         ctx.scale(viewScale, viewScale);
 
-        // 外围深蓝紫光晕（参考图风格，加深浓郁）
+        // 外围深蓝紫光晕（扩大范围，更浓郁深沉）
         ctx.save();
         ctx.scale(1, TILT_Y);
-        const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 800);
-        haloGrad.addColorStop(0, 'rgba(50, 65, 150, 0.25)');
-        haloGrad.addColorStop(0.3, 'rgba(40, 55, 130, 0.15)');
-        haloGrad.addColorStop(0.65, 'rgba(30, 40, 90, 0.06)');
-        haloGrad.addColorStop(1, 'rgba(15, 20, 50, 0)');
+        const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1000);
+        haloGrad.addColorStop(0, 'rgba(45, 60, 140, 0.32)');
+        haloGrad.addColorStop(0.3, 'rgba(35, 50, 120, 0.20)');
+        haloGrad.addColorStop(0.65, 'rgba(25, 35, 85, 0.10)');
+        haloGrad.addColorStop(1, 'rgba(12, 18, 45, 0)');
         ctx.fillStyle = haloGrad;
         ctx.beginPath();
-        ctx.arc(0, 0, 800, 0, Math.PI * 2);
+        ctx.arc(0, 0, 1000, 0, Math.PI * 2);
         ctx.fill();
         // 第二层更大范围、更淡的深蓝
-        const haloGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 1100);
-        haloGrad2.addColorStop(0, 'rgba(30, 40, 100, 0.12)');
-        haloGrad2.addColorStop(1, 'rgba(15, 20, 50, 0)');
+        const haloGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 1500);
+        haloGrad2.addColorStop(0, 'rgba(25, 35, 90, 0.18)');
+        haloGrad2.addColorStop(0.6, 'rgba(15, 22, 55, 0.06)');
+        haloGrad2.addColorStop(1, 'rgba(8, 12, 30, 0)');
         ctx.fillStyle = haloGrad2;
         ctx.beginPath();
-        ctx.arc(0, 0, 1100, 0, Math.PI * 2);
+        ctx.arc(0, 0, 1500, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
@@ -995,38 +996,40 @@
           ctx.fill();
         });
 
-        // 中心核（亮白→米黄→橙红→深蓝紫渐变，自然过渡到外围蓝）
+        // 中心核（亮白→米黄→橙红→深蓝紫渐变，散开+蓝色往外推）
         ctx.save();
         ctx.scale(1, TILT_Y);
-        // 最外层：橙红→蓝紫过渡环（连接中心暖色和外围冷蓝）
-        const transitionGrad = ctx.createRadialGradient(0, 0, 80, 0, 0, 250);
-        transitionGrad.addColorStop(0, 'rgba(255, 130, 60, 0.35)');
-        transitionGrad.addColorStop(0.4, 'rgba(180, 80, 110, 0.18)');
-        transitionGrad.addColorStop(0.75, 'rgba(80, 70, 160, 0.10)');
-        transitionGrad.addColorStop(1, 'rgba(40, 50, 130, 0)');
+        // 最外层：橙红→蓝紫过渡环（扩大，蓝色往外推到外圈）
+        const transitionGrad = ctx.createRadialGradient(0, 0, 140, 0, 0, 420);
+        transitionGrad.addColorStop(0, 'rgba(255, 130, 60, 0.32)');
+        transitionGrad.addColorStop(0.3, 'rgba(200, 90, 110, 0.20)');
+        transitionGrad.addColorStop(0.6, 'rgba(110, 80, 170, 0.14)');
+        transitionGrad.addColorStop(0.85, 'rgba(55, 65, 150, 0.08)');
+        transitionGrad.addColorStop(1, 'rgba(30, 40, 100, 0)');
         ctx.fillStyle = transitionGrad;
         ctx.beginPath();
-        ctx.arc(0, 0, 250, 0, Math.PI * 2);
+        ctx.arc(0, 0, 420, 0, Math.PI * 2);
         ctx.fill();
-        // 中层：米黄光晕
-        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 120);
+        // 中层：米黄光晕（扩大 1 倍，散开）
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 220);
         coreGrad.addColorStop(0, 'rgba(255, 250, 230, 1)');
-        coreGrad.addColorStop(0.2, 'rgba(255, 220, 170, 0.85)');
-        coreGrad.addColorStop(0.45, 'rgba(255, 160, 90, 0.5)');   // 鲜橙
-        coreGrad.addColorStop(0.75, 'rgba(220, 100, 80, 0.2)');   // 鲜红过渡
-        coreGrad.addColorStop(1, 'rgba(120, 60, 80, 0)');
+        coreGrad.addColorStop(0.15, 'rgba(255, 225, 175, 0.88)');
+        coreGrad.addColorStop(0.35, 'rgba(255, 170, 95, 0.55)');   // 鲜橙
+        coreGrad.addColorStop(0.6, 'rgba(225, 110, 85, 0.28)');    // 鲜红过渡
+        coreGrad.addColorStop(0.85, 'rgba(150, 75, 100, 0.10)');
+        coreGrad.addColorStop(1, 'rgba(80, 50, 90, 0)');
         ctx.fillStyle = coreGrad;
         ctx.beginPath();
-        ctx.arc(0, 0, 120, 0, Math.PI * 2);
+        ctx.arc(0, 0, 220, 0, Math.PI * 2);
         ctx.fill();
-        // 内层亮白核心
-        const coreGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+        // 内层亮白核心（也扩大一点）
+        const coreGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 70);
         coreGrad2.addColorStop(0, 'rgba(255, 255, 245, 1)');
         coreGrad2.addColorStop(0.5, 'rgba(255, 240, 200, 0.9)');
         coreGrad2.addColorStop(1, 'rgba(255, 220, 160, 0)');
         ctx.fillStyle = coreGrad2;
         ctx.beginPath();
-        ctx.arc(0, 0, 40, 0, Math.PI * 2);
+        ctx.arc(0, 0, 70, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
