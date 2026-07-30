@@ -541,7 +541,7 @@
     let nebulaParticles = [];
     let spiralDust = [];
     let scatteredStars = [];  // 轨道内外随机散布的亮星
-    let galaxyRings = [];     // 絮状同心椭圆环（星空蓝）
+    let spiralBands = [];     // 螺旋臂状絮状丝带（深蓝紫调）
 
     // 调整 Canvas 尺寸（支持高 DPI）
     function resizeCanvas() {
@@ -571,23 +571,23 @@
       }
     }
 
-    // 生成星云（暖金橙为主 + 蓝紫丰富，呼应参考图）
+    // 生成星云（深蓝紫为主 + 蓝丰富 + 少量暖色点缀，对应参考图浓郁色彩）
     function generateNebula() {
       nebulaParticles = [];
+      // 深蓝紫色调为主（参考图风格）
       const palettes = [
-        { hueMin: 20, hueMax: 45 },   // 暖金橙（主调 40%）
-        { hueMin: 350, hueMax: 15 },  // 玫红
-        { hueMin: 300, hueMax: 340 }, // 粉紫（蓝紫丰富）
-        { hueMin: 200, hueMax: 240 }, // 深蓝（蓝紫丰富）
-        { hueMin: 0, hueMax: 360 }    // 偶尔其他色
+        { hueMin: 230, hueMax: 260 }, // 深蓝紫 50%
+        { hueMin: 210, hueMax: 230 }, // 深蓝 30%
+        { hueMin: 280, hueMax: 310 }, // 紫色 15%
+        { hueMin: 25, hueMax: 45 }    // 暖金 5%（点缀）
       ];
-      // 调整概率：金橙 40% + 玫红 10% + 粉紫 25% + 深蓝 25%
+      // 调整概率
       const weightedPalettes = [];
-      for (let i = 0; i < 4; i++) weightedPalettes.push(palettes[0]); // 金橙 40%
-      for (let i = 0; i < 1; i++) weightedPalettes.push(palettes[1]); // 玫红 10%
-      for (let i = 0; i < 3; i++) weightedPalettes.push(palettes[2]); // 粉紫 25%
-      for (let i = 0; i < 2; i++) weightedPalettes.push(palettes[3]); // 深蓝 25%
-      const count = 110;
+      for (let i = 0; i < 5; i++) weightedPalettes.push(palettes[0]); // 蓝紫 50%
+      for (let i = 0; i < 3; i++) weightedPalettes.push(palettes[1]); // 深蓝 30%
+      for (let i = 0; i < 1; i++) weightedPalettes.push(palettes[2]); // 紫 15%
+      for (let i = 0; i < 1; i++) weightedPalettes.push(palettes[3]); // 暖金 5%
+      const count = 130;
       for (let i = 0; i < count; i++) {
         const p = weightedPalettes[Math.floor(Math.random() * weightedPalettes.length)];
         let hue;
@@ -598,12 +598,12 @@
         }
         nebulaParticles.push({
           angle: Math.random() * Math.PI * 2,
-          dist: 40 + Math.random() * 560,
-          r: Math.random() * 160 + 60,
+          dist: 40 + Math.random() * 580,
+          r: Math.random() * 170 + 70,  // 更大更浓郁
           hue: hue,
           sat: 60 + Math.random() * 30,
-          lit: 50 + Math.random() * 20,
-          alpha: Math.random() * 0.05 + 0.012
+          lit: 40 + Math.random() * 15,  // 略暗
+          alpha: Math.random() * 0.08 + 0.02  // 更明显
         });
       }
     }
@@ -705,27 +705,58 @@
       }
     }
 
-    // 生成絮状同心椭圆环（星空蓝，若有若无的环带，跟星星有遮挡关系）
-    function generateGalaxyRings() {
-      galaxyRings = [];
-      // 6 圈环，从内到外
-      const ringConfigs = [
-        { rx: 90,  width: 8,  opacity: 0.22, color: '#378ADD' },
-        { rx: 140, width: 10, opacity: 0.20, color: '#378ADD' },
-        { rx: 190, width: 12, opacity: 0.18, color: '#85B7EB' },
-        { rx: 240, width: 10, opacity: 0.15, color: '#378ADD' },
-        { rx: 290, width: 12, opacity: 0.12, color: '#85B7EB' },
-        { rx: 340, width: 8,  opacity: 0.08, color: '#C8D4F0' }
+    // 生成螺旋臂状絮状丝带（沿 4 条螺旋臂的断断续续光带，深蓝紫调）
+    function generateSpiralBands() {
+      spiralBands = [];
+      // 4 条螺旋臂的贝塞尔曲线控制点（相对中心）
+      const armDefs = [
+        { p0: [-280, 40], p1: [-150, -50], p2: [100, -55], p3: [280, -30], color: '#5B6BAA', width: 28, opacity: 0.32 },
+        { p0: [-280, -40], p1: [-150, 50], p2: [100, 55], p3: [280, 30], color: '#2C3A7A', width: 26, opacity: 0.30 },
+        { p0: [-260, -55], p1: [-100, 15], p2: [150, -20], p3: [240, -10], color: '#7F8AC0', width: 22, opacity: 0.26 },
+        { p0: [-260, 55], p1: [-100, -15], p2: [150, 20], p3: [240, 10], color: '#7F8AC0', width: 22, opacity: 0.24 }
       ];
-      ringConfigs.forEach(r => {
-        galaxyRings.push({
-          rx: r.rx,
-          ry: r.rx * TILT_Y,  // y 方向压扁（侧俯视）
-          width: r.width,
-          opacity: r.opacity,
-          color: r.color
-        });
+      armDefs.forEach(arm => {
+        // 每条螺旋臂拆分成 2-3 段（断断续续感）
+        const segments = 2 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < segments; i++) {
+          const t0 = i / segments + Math.random() * 0.05;
+          const t1 = (i + 1) / segments - Math.random() * 0.05;
+          // 贝塞尔曲线采样
+          const sample = (t) => {
+            const mt = 1 - t;
+            const x = mt*mt*mt*arm.p0[0] + 3*mt*mt*t*arm.p1[0] + 3*mt*t*t*arm.p2[0] + t*t*t*arm.p3[0];
+            const y = mt*mt*mt*arm.p0[1] + 3*mt*mt*t*arm.p1[1] + 3*mt*t*t*arm.p2[1] + t*t*t*arm.p3[1];
+            return [x, y * TILT_Y];
+          };
+          spiralBands.push({
+            p0: sample(t0),
+            p1: sample((t0 + t1) / 2 + (Math.random() - 0.5) * 0.05),
+            p2: sample((t0 + t1) / 2 + (Math.random() - 0.5) * 0.05),
+            p3: sample(t1),
+            color: arm.color,
+            width: arm.width * (0.8 + Math.random() * 0.4),
+            opacity: arm.opacity * (0.8 + Math.random() * 0.4)
+          });
+        }
       });
+      // 加几个断断续续的小絮状补丁
+      const numPatches = 20;
+      for (let i = 0; i < numPatches; i++) {
+        const t = Math.random();
+        const arm = armDefs[Math.floor(Math.random() * armDefs.length)];
+        const mt = 1 - t;
+        const x = mt*mt*mt*arm.p0[0] + 3*mt*mt*t*arm.p1[0] + 3*mt*t*t*arm.p2[0] + t*t*t*arm.p3[0];
+        const y = (mt*mt*mt*arm.p0[1] + 3*mt*mt*t*arm.p1[1] + 3*mt*t*t*arm.p2[1] + t*t*t*arm.p3[1]) * TILT_Y;
+        spiralBands.push({
+          patch: true,
+          x: x + (Math.random() - 0.5) * 40,
+          y: y + (Math.random() - 0.5) * 15,
+          rx: 25 + Math.random() * 30,
+          ry: 8 + Math.random() * 8,
+          color: Math.random() < 0.5 ? '#A5B0E0' : '#C8D4F0',
+          opacity: 0.18 + Math.random() * 0.18
+        });
+      }
     }
 
     // 计算珠子在银河系中的位置（沿螺旋臂按时间分布）
@@ -818,7 +849,7 @@
 
     // 渲染一帧
     function renderGalaxy() {
-      ctx.fillStyle = '#060611';
+      ctx.fillStyle = '#040408';  // 更深的背景底色
       ctx.fillRect(0, 0, cw, ch);
 
       const cx = cw / 2;
@@ -843,17 +874,25 @@
         ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
         ctx.scale(viewScale, viewScale);
 
-        // 外围蓝紫色光晕（呼应参考图的大范围光晕）
+        // 外围深蓝紫光晕（参考图风格，加深浓郁）
         ctx.save();
         ctx.scale(1, TILT_Y);
-        const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 700);
-        haloGrad.addColorStop(0, 'rgba(120, 90, 200, 0.15)');
-        haloGrad.addColorStop(0.3, 'rgba(95, 75, 180, 0.08)');
-        haloGrad.addColorStop(0.7, 'rgba(60, 50, 120, 0.03)');
-        haloGrad.addColorStop(1, 'rgba(40, 30, 80, 0)');
+        const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 800);
+        haloGrad.addColorStop(0, 'rgba(50, 65, 150, 0.25)');
+        haloGrad.addColorStop(0.3, 'rgba(40, 55, 130, 0.15)');
+        haloGrad.addColorStop(0.65, 'rgba(30, 40, 90, 0.06)');
+        haloGrad.addColorStop(1, 'rgba(15, 20, 50, 0)');
         ctx.fillStyle = haloGrad;
         ctx.beginPath();
-        ctx.arc(0, 0, 700, 0, Math.PI * 2);
+        ctx.arc(0, 0, 800, 0, Math.PI * 2);
+        ctx.fill();
+        // 第二层更大范围、更淡的深蓝
+        const haloGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 1100);
+        haloGrad2.addColorStop(0, 'rgba(30, 40, 100, 0.12)');
+        haloGrad2.addColorStop(1, 'rgba(15, 20, 50, 0)');
+        ctx.fillStyle = haloGrad2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1100, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
@@ -883,19 +922,33 @@
           ctx.fill();
         });
 
-        // —— 絮状同心椭圆环（星空蓝，若有若无，跟星星有遮挡关系） ——
-        galaxyRings.forEach(r => {
-          // 多层叠加模拟高斯模糊（外层宽淡 + 内层窄亮）
-          for (let i = 3; i >= 0; i--) {
-            const w = r.width + i * 4;
-            const op = r.opacity * (i === 0 ? 1 : 0.25);
-            ctx.strokeStyle = hexToRgba(r.color, op);
-            ctx.lineWidth = w;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, r.rx, r.ry, 0, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-        });
+        // —— 螺旋臂状断断续续絮状丝带（深蓝紫调，跟星星有遮挡关系） ——
+        ctx.save();
+        // 多层叠加（外宽淡 + 内窄亮）模拟高斯模糊 = 絮状感
+        for (let pass = 2; pass >= 0; pass--) {
+          const scale = pass === 0 ? 1 : (2 - pass) * 1.5;
+          const opMul = pass === 0 ? 1 : 0.3;
+          ctx.lineWidth = 1;
+          ctx.lineCap = 'round';
+          spiralBands.forEach(b => {
+            if (b.patch) {
+              // 小絮状补丁（椭圆）
+              ctx.fillStyle = hexToRgba(b.color, b.opacity * opMul);
+              ctx.beginPath();
+              ctx.ellipse(b.x, b.y, b.rx * scale, b.ry * scale, 0, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              // 丝带段（贝塞尔曲线）
+              ctx.strokeStyle = hexToRgba(b.color, b.opacity * opMul);
+              ctx.lineWidth = b.width * scale;
+              ctx.beginPath();
+              ctx.moveTo(b.p0[0], b.p0[1]);
+              ctx.bezierCurveTo(b.p1[0], b.p1[1], b.p2[0], b.p2[1], b.p3[0], b.p3[1]);
+              ctx.stroke();
+            }
+          });
+        }
+        ctx.restore();
 
         // —— 中等星 + 亮星（在絮状条带前面，跳出来） ——
         spiralDust.forEach(d => {
@@ -1634,7 +1687,7 @@
     generateNebula();
     generateSpiralDust();
     generateScatteredStars();
-    generateGalaxyRings();
+    generateSpiralBands();
     buildMaterialGrid();
     renderIndex();
     animate();
