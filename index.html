@@ -538,6 +538,11 @@
     let timelineScroll = 0;           // 从最新端往回滚了多少颗（0=看最新的）
     let targetTimelineScroll = 0;
 
+    // 开场动画：0=散沙（左上角），1=汇集到星河
+    let openingProgress = 0;
+    let openingStartTime = 0;
+    const OPENING_DURATION = 2500;    // 2.5 秒动画
+
     let backgroundStars = [];
     let nebulaParticles = [];
     let spiralDust = [];
@@ -1093,7 +1098,7 @@
       ctx.translate(cx + viewOffsetX * (1 - viewTransition), cy + viewOffsetY * (1 - viewTransition));
       ctx.scale(viewScale, viewScale);
 
-      sorted.forEach((bead) => {
+      sorted.forEach((bead, idx) => {
         const galaxyPos = getBeadGalaxyPosition(bead);
         const timelinePos = getBeadTimelinePosition(bead);
 
@@ -1105,10 +1110,22 @@
 
         // 位置插值（timelinePos 为 null 时退回银河系位置）
         const tlPos = timelinePos || { x: galaxyPos.x, y: galaxyPos.y, alpha: 1 };
-        const pos = {
+        let pos = {
           x: galaxyPos.x + (tlPos.x - galaxyPos.x) * viewTransition,
           y: galaxyPos.y + (tlPos.y - galaxyPos.y) * viewTransition
         };
+
+        // 开场动画：珠子从左上角散沙位置汇集到星河位置
+        if (openingProgress < 1) {
+          // 用珠子 id 作为种子生成确定的开场位置（左上角散开）
+          const seed = bead.id * 137.5;
+          const openX = -cw * 0.35 + Math.sin(seed) * 150 + (bead.id % 5) * 30;
+          const openY = -ch * 0.35 + Math.cos(seed) * 120 + (bead.id % 4) * 25;
+          // easeOutCubic 缓动
+          const ease = 1 - Math.pow(1 - openingProgress, 3);
+          pos.x = openX + (pos.x - openX) * ease;
+          pos.y = openY + (pos.y - openY) * ease;
+        }
         // 窗口边缘淡出
         const beadAlpha = viewTransition > 0.5 ? tlPos.alpha : 1;
 
@@ -1135,14 +1152,14 @@
         ctx.arc(pos.x, pos.y, glowR, 0, Math.PI * 2);
         ctx.fill();
 
-        // 珠子本体
+        // 珠子本体（亮色→中间色→透明，去掉黑色阴影边缘）
         const beadGrad = ctx.createRadialGradient(
           pos.x - beadR * 0.3, pos.y - beadR * 0.3, 0,
           pos.x, pos.y, beadR
         );
         beadGrad.addColorStop(0, tint.highlight);
-        beadGrad.addColorStop(0.5, tint.mid);
-        beadGrad.addColorStop(1, tint.shadow);
+        beadGrad.addColorStop(0.4, tint.mid);
+        beadGrad.addColorStop(1, hexToRgba(tint.mid, 0));  // 透明边缘，融入星河
         ctx.fillStyle = beadGrad;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, beadR, 0, Math.PI * 2);
@@ -1166,6 +1183,12 @@
 
     // 动画循环
     function animate() {
+      // 开场动画进度
+      if (openingProgress < 1) {
+        if (!openingStartTime) openingStartTime = performance.now();
+        const elapsed = performance.now() - openingStartTime;
+        openingProgress = Math.min(1, elapsed / OPENING_DURATION);
+      }
       if (!isDragging) {
         galaxyRotation += autoRotateSpeed;
       }
