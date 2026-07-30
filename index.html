@@ -495,6 +495,22 @@
       return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + alpha + ')';
     }
 
+    // 开场动画散沙偏移：每个粒子从左上角散开位置汇集到正常位置
+    // seed 不同 → 开场位置不同 → 散沙效果
+    function openingOffset(seed, normalX, normalY) {
+      if (openingProgress >= 1) return { dx: 0, dy: 0, alpha: 1 };
+      const ease = 1 - Math.pow(1 - openingProgress, 3);
+      // 开场位置：左上角散开（基于 seed 生成确定性位置）
+      const openX = -cw * 0.35 + Math.sin(seed * 1.7) * 250;
+      const openY = -ch * 0.35 + Math.cos(seed * 2.3) * 180;
+      // 偏移 = (开场位置 - 正常位置) * (1 - ease)，ease=1 时偏移为0
+      return {
+        dx: (openX - normalX) * (1 - ease),
+        dy: (openY - normalY) * (1 - ease),
+        alpha: Math.min(1, openingProgress * 1.5)  // 前期就淡入
+      };
+    }
+
     function compactDate(iso) {
       const d = new Date(iso);
       return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
@@ -914,14 +930,14 @@
         ctx.fill();
       });
 
-      // —— 银河系（粒子在盘面内自转，椭圆轮廓不变） ——
+      // —— 银河系（粒子在盘面内自转，椭圆轮廓不变，开场散沙汇集） ——
       if (galaxyAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = galaxyAlpha;
         ctx.translate(cx + viewOffsetX, cy + viewOffsetY);
         ctx.scale(viewScale, viewScale);
 
-        // 外围深蓝紫光晕（扩大范围，更浓郁深沉）
+        // 外围深蓝紫光晕（开场淡入）
         ctx.save();
         ctx.scale(1, TILT_Y);
         const haloGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1000);
@@ -944,99 +960,106 @@
         ctx.fill();
         ctx.restore();
 
-        // 星云（在盘面内旋转，y 方向压扁投影）
+        // 星云（在盘面内旋转，y 方向压扁投影，开场散沙汇集）
         nebulaParticles.forEach(n => {
           const a = n.angle + galaxyRotation;
           const nx = Math.cos(a) * n.dist;
           const ny = Math.sin(a) * n.dist * TILT_Y;
-          const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
-          grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + n.alpha + ')');
+          const off = openingOffset(n.angle * 100 + n.dist, nx, ny);
+          const fx = nx + off.dx, fy = ny + off.dy;
+          const grad = ctx.createRadialGradient(fx, fy, 0, fx, fy, n.r);
+          grad.addColorStop(0, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,' + (n.alpha * off.alpha) + ')');
           grad.addColorStop(1, 'hsla(' + n.hue + ',' + n.sat + '%,' + n.lit + '%,0)');
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(nx, ny, n.r, 0, Math.PI * 2);
+          ctx.arc(fx, fy, n.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // —— 暗星尘（在絮状条带后面，被遮挡） ——
+        // —— 暗星尘（开场散沙汇集） ——
         spiralDust.forEach(d => {
           if (d.layer !== 'dim') return;
           const a = d.angle + galaxyRotation;
           const x = Math.cos(a) * d.dist;
           const y = Math.sin(a) * d.dist * TILT_Y;
-          ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
+          const off = openingOffset(d.angle * 50 + d.dist, x, y);
+          ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + (d.brightness * off.alpha) + ')';
           ctx.beginPath();
-          ctx.arc(x, y, d.r, 0, Math.PI * 2);
+          ctx.arc(x + off.dx, y + off.dy, d.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // —— 中等星 + 亮星（跳出来） ——
+        // —— 中等星 + 亮星（跳出来，开场散沙汇集） ——
         spiralDust.forEach(d => {
           if (d.layer === 'dim') return;
           const a = d.angle + galaxyRotation;
-          const x = Math.cos(a) * d.dist;
-          const y = Math.sin(a) * d.dist * TILT_Y;
+          const x0 = Math.cos(a) * d.dist;
+          const y0 = Math.sin(a) * d.dist * TILT_Y;
+          const off = openingOffset(d.angle * 50 + d.dist, x0, y0);
+          const x = x0 + off.dx, y = y0 + off.dy;
+          const br = d.brightness * off.alpha;
           if (d.layer === 'bright') {
             // 亮星：光晕 + 本体
             const glowR = d.r * 4;
             const glowColor = d.hue < 0 ? 'rgba(255,255,255,' : 'hsla(' + d.hue + ',90%,75%,';
             const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-            grad.addColorStop(0, glowColor + (d.brightness * 0.4) + ')');
+            grad.addColorStop(0, glowColor + (br * 0.4) + ')');
             grad.addColorStop(1, glowColor + '0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(x, y, glowR, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = d.hue < 0
-              ? 'rgba(255,255,255,' + d.brightness + ')'
-              : 'hsla(' + d.hue + ',90%,80%,' + d.brightness + ')';
+              ? 'rgba(255,255,255,' + br + ')'
+              : 'hsla(' + d.hue + ',90%,80%,' + br + ')';
           } else if (d.layer === 'mid') {
             // 中等星：淡光晕 + 本体
             const glowR = d.r * 2.5;
             const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-            grad.addColorStop(0, 'hsla(' + d.hue + ',80%,70%,' + (d.brightness * 0.3) + ')');
+            grad.addColorStop(0, 'hsla(' + d.hue + ',80%,70%,' + (br * 0.3) + ')');
             grad.addColorStop(1, 'hsla(' + d.hue + ',80%,70%,0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(x, y, glowR, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = 'hsla(' + d.hue + ',80%,72%,' + d.brightness + ')';
+            ctx.fillStyle = 'hsla(' + d.hue + ',80%,72%,' + br + ')';
           }
           ctx.beginPath();
           ctx.arc(x, y, d.r, 0, Math.PI * 2);
           ctx.fill();
         });
 
-        // 散布星（轨道内外，亮星+中等星，跟随盘面旋转，y 压扁）
+        // 散布星（开场散沙汇集）
         scatteredStars.forEach(s => {
           const a = s.angle + galaxyRotation;
-          const x = Math.cos(a) * s.dist;
-          const y = Math.sin(a) * s.dist * TILT_Y;
+          const x0 = Math.cos(a) * s.dist;
+          const y0 = Math.sin(a) * s.dist * TILT_Y;
+          const off = openingOffset(s.angle * 80 + s.dist, x0, y0);
+          const x = x0 + off.dx, y = y0 + off.dy;
+          const br = s.brightness * off.alpha;
           if (s.layer === 'bright') {
-            // 亮星光晕 + 本体
             const glowR = s.r * 3.5;
             const glowColor = s.hue < 0 ? 'rgba(255,255,255,' : 'hsla(' + s.hue + ',90%,75%,';
             const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-            grad.addColorStop(0, glowColor + (s.brightness * 0.35) + ')');
+            grad.addColorStop(0, glowColor + (br * 0.35) + ')');
             grad.addColorStop(1, glowColor + '0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(x, y, glowR, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = s.hue < 0
-              ? 'rgba(255,255,255,' + s.brightness + ')'
-              : 'hsla(' + s.hue + ',90%,80%,' + s.brightness + ')';
+              ? 'rgba(255,255,255,' + br + ')'
+              : 'hsla(' + s.hue + ',90%,80%,' + br + ')';
           } else {
-            // 中等星：淡光晕 + 本体
             const glowR = s.r * 2;
             const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-            grad.addColorStop(0, 'hsla(' + s.hue + ',80%,70%,' + (s.brightness * 0.25) + ')');
+            grad.addColorStop(0, 'hsla(' + s.hue + ',80%,70%,' + (br * 0.25) + ')');
             grad.addColorStop(1, 'hsla(' + s.hue + ',80%,70%,0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(x, y, glowR, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = 'hsla(' + s.hue + ',80%,72%,' + s.brightness + ')';
+            ctx.fillStyle = 'hsla(' + s.hue + ',80%,72%,' + br + ')';
           }
           ctx.beginPath();
           ctx.arc(x, y, s.r, 0, Math.PI * 2);
