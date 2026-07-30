@@ -541,6 +541,7 @@
     let nebulaParticles = [];
     let spiralDust = [];
     let scatteredStars = [];  // 轨道内外随机散布的亮星
+    let galaxyRings = [];     // 絮状同心椭圆环（星空蓝）
 
     // 调整 Canvas 尺寸（支持高 DPI）
     function resizeCanvas() {
@@ -704,6 +705,29 @@
       }
     }
 
+    // 生成絮状同心椭圆环（星空蓝，若有若无的环带，跟星星有遮挡关系）
+    function generateGalaxyRings() {
+      galaxyRings = [];
+      // 6 圈环，从内到外
+      const ringConfigs = [
+        { rx: 90,  width: 8,  opacity: 0.22, color: '#378ADD' },
+        { rx: 140, width: 10, opacity: 0.20, color: '#378ADD' },
+        { rx: 190, width: 12, opacity: 0.18, color: '#85B7EB' },
+        { rx: 240, width: 10, opacity: 0.15, color: '#378ADD' },
+        { rx: 290, width: 12, opacity: 0.12, color: '#85B7EB' },
+        { rx: 340, width: 8,  opacity: 0.08, color: '#C8D4F0' }
+      ];
+      ringConfigs.forEach(r => {
+        galaxyRings.push({
+          rx: r.rx,
+          ry: r.rx * TILT_Y,  // y 方向压扁（侧俯视）
+          width: r.width,
+          opacity: r.opacity,
+          color: r.color
+        });
+      });
+    }
+
     // 计算珠子在银河系中的位置（沿螺旋臂按时间分布）
     // 侧俯视：y 方向压扁模拟 35 度倾斜
     function getBeadGalaxyPosition(bead) {
@@ -847,8 +871,35 @@
           ctx.fill();
         });
 
-        // 螺旋臂尘埃（三层：亮星有光晕 / 中等星半亮 / 暗星尘铺底）
+        // —— 暗星尘（在絮状条带后面，被遮挡） ——
         spiralDust.forEach(d => {
+          if (d.layer !== 'dim') return;
+          const a = d.angle + galaxyRotation;
+          const x = Math.cos(a) * d.dist;
+          const y = Math.sin(a) * d.dist * TILT_Y;
+          ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // —— 絮状同心椭圆环（星空蓝，若有若无，跟星星有遮挡关系） ——
+        galaxyRings.forEach(r => {
+          // 多层叠加模拟高斯模糊（外层宽淡 + 内层窄亮）
+          for (let i = 3; i >= 0; i--) {
+            const w = r.width + i * 4;
+            const op = r.opacity * (i === 0 ? 1 : 0.25);
+            ctx.strokeStyle = hexToRgba(r.color, op);
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r.rx, r.ry, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        });
+
+        // —— 中等星 + 亮星（在絮状条带前面，跳出来） ——
+        spiralDust.forEach(d => {
+          if (d.layer === 'dim') return;
           const a = d.angle + galaxyRotation;
           const x = Math.cos(a) * d.dist;
           const y = Math.sin(a) * d.dist * TILT_Y;
@@ -877,9 +928,6 @@
             ctx.arc(x, y, glowR, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = 'hsla(' + d.hue + ',80%,72%,' + d.brightness + ')';
-          } else {
-            // 暗星尘
-            ctx.fillStyle = 'hsla(' + d.hue + ',75%,65%,' + d.brightness + ')';
           }
           ctx.beginPath();
           ctx.arc(x, y, d.r, 0, Math.PI * 2);
@@ -1586,6 +1634,7 @@
     generateNebula();
     generateSpiralDust();
     generateScatteredStars();
+    generateGalaxyRings();
     buildMaterialGrid();
     renderIndex();
     animate();
