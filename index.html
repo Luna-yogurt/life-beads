@@ -347,6 +347,7 @@
     <button class="tool-btn" id="addBeadBtn">＋ New Star</button>
     <button class="tool-btn" id="exportBtn">⬇ Export</button>
     <button class="tool-btn" id="importBtn">⬆ Import</button>
+    <button class="tool-btn" id="musicToggleBtn">🔇 Sound</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
   </div>
 
@@ -1705,7 +1706,112 @@
     });
 
     /* ==========================================================
-       十三、初始化
+       十三、背景氛围音（Web Audio API 生成，不依赖外部文件）
+       低频 drone + 星星闪烁 + 缓慢滤波变化 = 太空氛围
+       ========================================================== */
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let ambientNodes = [];
+    let sparkleTimer = null;
+
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
+    musicToggleBtn.addEventListener('click', () => {
+      if (isMusicPlaying) {
+        stopAmbientMusic();
+        musicToggleBtn.textContent = '🔇 Sound';
+      } else {
+        startAmbientMusic();
+        musicToggleBtn.textContent = '🔊 Sound';
+      }
+    });
+
+    function startAmbientMusic() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      // 低频 drone（深空底音）：三个正弦波叠加
+      const freqs = [55, 82.4, 110]; // A1, E2, A2
+      const drones = freqs.map(f => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        return osc;
+      });
+
+      // 低通滤波器（让声音柔和空灵）
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 400;
+      filter.Q.value = 1.5;
+
+      // 总音量（淡入）
+      const masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0;
+      masterGain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 3);
+
+      // 连接
+      drones.forEach(d => d.connect(filter));
+      filter.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+      drones.forEach(d => d.start());
+
+      // LFO 慢速调制滤波器（20 秒一个周期，营造流动感）
+      const lfo = audioCtx.createOscillator();
+      lfo.frequency.value = 0.05;
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 120;
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start();
+
+      // 星星闪烁音（随机高频短音）
+      function sparkle() {
+        if (!isMusicPlaying || !audioCtx) return;
+        const sparkleOsc = audioCtx.createOscillator();
+        sparkleOsc.type = 'sine';
+        sparkleOsc.frequency.value = 600 + Math.random() * 1400;
+
+        const sparkleGain = audioCtx.createGain();
+        sparkleGain.gain.value = 0;
+        const now = audioCtx.currentTime;
+        sparkleGain.gain.linearRampToValueAtTime(0.025, now + 0.08);
+        sparkleGain.gain.linearRampToValueAtTime(0, now + 0.6);
+
+        sparkleOsc.connect(sparkleGain);
+        sparkleGain.connect(audioCtx.destination);
+        sparkleOsc.start(now);
+        sparkleOsc.stop(now + 0.7);
+
+        sparkleTimer = setTimeout(sparkle, 1500 + Math.random() * 4000);
+      }
+      sparkleTimer = setTimeout(sparkle, 2000);
+
+      ambientNodes = [...drones, lfo, masterGain, filter];
+      isMusicPlaying = true;
+    }
+
+    function stopAmbientMusic() {
+      if (!audioCtx || !isMusicPlaying) return;
+      isMusicPlaying = false;
+      if (sparkleTimer) { clearTimeout(sparkleTimer); sparkleTimer = null; }
+      // 淡出
+      const gain = ambientNodes.find(n => n.gain !== undefined);
+      if (gain) {
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5);
+      }
+      // 1.5 秒后停止所有节点
+      setTimeout(() => {
+        ambientNodes.forEach(node => {
+          if (node.stop) { try { node.stop(); } catch(e) {} }
+        });
+        ambientNodes = [];
+      }, 1600);
+    }
+
+    /* ==========================================================
+       十四、初始化
        ========================================================== */
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
