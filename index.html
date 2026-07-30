@@ -530,7 +530,7 @@
     // 视图过渡：0 = 银河系视图，1 = 曲线视图
     let viewTransition = 0;
     let targetViewTransition = 0;
-    const TILT_Y = 0.55;              // 侧俯视 y 方向压扁系数（模拟 35 度倾斜）
+    const TILT_Y = 0.38;              // 侧俯视 y 方向压扁系数（更扁，降低分散感）
 
     // 曲线视图的滚动：显示最近 N 颗珠子，可左右滚动查看更早的
     const TIMELINE_WINDOW = 7;        // 窗口大小（显示几颗珠子）
@@ -922,35 +922,7 @@
           ctx.fill();
         });
 
-        // —— 螺旋臂状断断续续絮状丝带（深蓝紫调，跟星星有遮挡关系） ——
-        ctx.save();
-        // 多层叠加（外宽淡 + 内窄亮）模拟高斯模糊 = 絮状感
-        for (let pass = 2; pass >= 0; pass--) {
-          const scale = pass === 0 ? 1 : (2 - pass) * 1.5;
-          const opMul = pass === 0 ? 1 : 0.3;
-          ctx.lineWidth = 1;
-          ctx.lineCap = 'round';
-          spiralBands.forEach(b => {
-            if (b.patch) {
-              // 小絮状补丁（椭圆）
-              ctx.fillStyle = hexToRgba(b.color, b.opacity * opMul);
-              ctx.beginPath();
-              ctx.ellipse(b.x, b.y, b.rx * scale, b.ry * scale, 0, 0, Math.PI * 2);
-              ctx.fill();
-            } else {
-              // 丝带段（贝塞尔曲线）
-              ctx.strokeStyle = hexToRgba(b.color, b.opacity * opMul);
-              ctx.lineWidth = b.width * scale;
-              ctx.beginPath();
-              ctx.moveTo(b.p0[0], b.p0[1]);
-              ctx.bezierCurveTo(b.p1[0], b.p1[1], b.p2[0], b.p2[1], b.p3[0], b.p3[1]);
-              ctx.stroke();
-            }
-          });
-        }
-        ctx.restore();
-
-        // —— 中等星 + 亮星（在絮状条带前面，跳出来） ——
+        // —— 中等星 + 亮星（跳出来） ——
         spiralDust.forEach(d => {
           if (d.layer === 'dim') return;
           const a = d.angle + galaxyRotation;
@@ -1023,16 +995,26 @@
           ctx.fill();
         });
 
-        // 中心核（亮白米黄椭圆，更亮更大）
+        // 中心核（亮白→米黄→橙红→深蓝紫渐变，自然过渡到外围蓝）
         ctx.save();
         ctx.scale(1, TILT_Y);
-        // 外层米黄光晕
+        // 最外层：橙红→蓝紫过渡环（连接中心暖色和外围冷蓝）
+        const transitionGrad = ctx.createRadialGradient(0, 0, 80, 0, 0, 250);
+        transitionGrad.addColorStop(0, 'rgba(255, 130, 60, 0.35)');
+        transitionGrad.addColorStop(0.4, 'rgba(180, 80, 110, 0.18)');
+        transitionGrad.addColorStop(0.75, 'rgba(80, 70, 160, 0.10)');
+        transitionGrad.addColorStop(1, 'rgba(40, 50, 130, 0)');
+        ctx.fillStyle = transitionGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 250, 0, Math.PI * 2);
+        ctx.fill();
+        // 中层：米黄光晕
         const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 120);
         coreGrad.addColorStop(0, 'rgba(255, 250, 230, 1)');
-        coreGrad.addColorStop(0.2, 'rgba(255, 235, 190, 0.85)');
-        coreGrad.addColorStop(0.5, 'rgba(255, 200, 130, 0.4)');
-        coreGrad.addColorStop(0.85, 'rgba(220, 160, 80, 0.1)');
-        coreGrad.addColorStop(1, 'rgba(120, 80, 40, 0)');
+        coreGrad.addColorStop(0.2, 'rgba(255, 220, 170, 0.85)');
+        coreGrad.addColorStop(0.45, 'rgba(255, 160, 90, 0.5)');   // 鲜橙
+        coreGrad.addColorStop(0.75, 'rgba(220, 100, 80, 0.2)');   // 鲜红过渡
+        coreGrad.addColorStop(1, 'rgba(120, 60, 80, 0)');
         ctx.fillStyle = coreGrad;
         ctx.beginPath();
         ctx.arc(0, 0, 120, 0, Math.PI * 2);
@@ -1040,8 +1022,8 @@
         // 内层亮白核心
         const coreGrad2 = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
         coreGrad2.addColorStop(0, 'rgba(255, 255, 245, 1)');
-        coreGrad2.addColorStop(0.5, 'rgba(255, 245, 210, 0.9)');
-        coreGrad2.addColorStop(1, 'rgba(255, 230, 180, 0)');
+        coreGrad2.addColorStop(0.5, 'rgba(255, 240, 200, 0.9)');
+        coreGrad2.addColorStop(1, 'rgba(255, 220, 160, 0)');
         ctx.fillStyle = coreGrad2;
         ctx.beginPath();
         ctx.arc(0, 0, 40, 0, Math.PI * 2);
